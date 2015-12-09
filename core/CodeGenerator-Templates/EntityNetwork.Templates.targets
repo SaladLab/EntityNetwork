@@ -1,0 +1,61 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Work out the path to ClientGenerator.exe -->
+  <Choose>
+    <!-- Using NuGet packages -->
+    <When Condition="Exists('$(MSBuildThisFileDirectory)..\tools')">
+      <PropertyGroup>
+        <EntityNetworkCodeGenToolExeDir>$(MSBuildThisFileDirectory)..\tools</EntityNetworkCodeGenToolExeDir>
+      </PropertyGroup>
+    </When>
+    <!-- Internal build within EntityNetwork solution -->
+    <When Condition="Exists('$(MSBuildThisFileDirectory)..\CodeGenerator')">
+      <PropertyGroup>
+        <EntityNetworkCodeGenToolExeDir>$(MSBuildThisFileDirectory)..\CodeGenerator\bin\$(ConfigurationName)</EntityNetworkCodeGenToolExeDir>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="HasTrailingSlash('$(EntityNetworkCodeGenToolExeDir)')">
+      <PropertyGroup>
+        <EntityNetworkCodeGenToolExe>$(EntityNetworkCodeGenToolExeDir)CodeGenerator.exe</EntityNetworkCodeGenToolExe>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <EntityNetworkCodeGenToolExe>$(EntityNetworkCodeGenToolExeDir)\CodeGenerator.exe</EntityNetworkCodeGenToolExe>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <!-- Code Generation Task -->
+  <Target Name="EntityNetworkPreprocessing"
+          AfterTargets="BeforeCompile;ResolveReferences"
+          BeforeTargets="CoreCompile"
+          Inputs="@(Compile);@(ReferencePath)"
+          Outputs="$(ProjectDir)$(IntermediateOutputPath)$(TargetName)$(TargetExt)">
+    <Message Text="[EntityNetworkPreprocessing] - Project=$(ProjectName)" Importance="high"/>
+    <Touch Files="$(ProjectDir)Properties\EntityNetwork.CodeGen.cs"
+      Condition="!Exists('$(ProjectDir)Properties\EntityNetwork.CodeGen.cs')"
+      ForceTouch="true"
+      AlwaysCreate="true"
+      ContinueOnError="true" />
+    <PropertyGroup>
+      <ArgsFile>$(IntermediateOutputPath)$(TargetName).EntityNetwork.CodeGen.Args.txt</ArgsFile>
+      <SourceFiles>@(Compile->'%(Identity)', ';')</SourceFiles>
+      <ReferenceFiles>@(ReferencePath->'%(Identity)', ';')</ReferenceFiles>
+    </PropertyGroup>
+    <Message Text="[EntityNetworkPreprocessing] - Code-gen args file=$(ArgsFile)"/>
+    <WriteLinesToFile Overwrite="true" File="$(ArgsFile)" Lines=""/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--path=$(ProjectDir)"/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--source=$([MSBuild]::Escape($(SourceFiles)))"/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--reference=$([MSBuild]::Escape($(ReferenceFiles)))"/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--define=$([MSBuild]::Escape($(DefineConstants)))"/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--target=$(EntityNetworkTarget)" Condition="$(EntityNetworkTarget) != ''"/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--protobuf=$(EntityNetworkProtobuf)" Condition="$(EntityNetworkProtobuf) != ''"/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--serverentity=$(EntityNetworkServerEntityBaseClass)" Condition="$(EntityNetworkServerEntityBaseClass) != ''"/>
+    <WriteLinesToFile File="$(ArgsFile)" Lines="--cliententity=$(EntityNetworkClientEntityBaseClass)" Condition="$(EntityNetworkClientEntityBaseClass) != ''"/>
+    <Exec Command='"$(EntityNetworkCodeGenToolExe)" "@$(ArgsFile)"' />
+  </Target>
+
+</Project>

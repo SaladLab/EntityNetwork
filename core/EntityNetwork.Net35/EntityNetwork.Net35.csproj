@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{6EDAAAE4-945E-4AC5-AAF2-4474A3F7EB2D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>EntityNetwork</RootNamespace>
+    <AssemblyName>EntityNetwork</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="NetLegacySupport.Action, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NetLegacySupport.Action.1.0.3\lib\net35\NetLegacySupport.Action.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NetLegacySupport.ConcurrentDictionary, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NetLegacySupport.ConcurrentDictionary.1.0.2\lib\net35\NetLegacySupport.ConcurrentDictionary.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NetLegacySupport.Tuple, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NetLegacySupport.Tuple.1.0.2\lib\net35\NetLegacySupport.Tuple.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\protobuf-net.2.0.0.668\lib\net35\protobuf-net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="TrackableData, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.0.2.0-alpha3\lib\net35\TrackableData.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="TrackableData.Protobuf, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.Protobuf.0.2.0-alpha3\lib\net35\TrackableData.Protobuf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="TypeAlias, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TypeAlias.1.0.2\lib\net35\TypeAlias.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\EntityNetwork\Attributes.cs">
+      <Link>Attributes.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\ClientZone.cs">
+      <Link>ClientZone.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\Entity.cs">
+      <Link>Entity.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\EntityFactory.cs">
+      <Link>EntityFactory.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\Payload.cs">
+      <Link>Payload.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\Properties\AssemblyInfo.cs">
+      <Link>Properties\AssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\ProtobufChannel.cs">
+      <Link>ProtobufChannel.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\ServerZone.cs">
+      <Link>ServerZone.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\Zone.cs">
+      <Link>Zone.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
