@@ -30,16 +30,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NetLegacySupport.Action, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NetLegacySupport.Action.1.0.3\lib\net35\NetLegacySupport.Action.dll</HintPath>
+    <Reference Include="NetLegacySupport.Action, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NetLegacySupport.Action.1.1.0\lib\net35\NetLegacySupport.Action.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="NetLegacySupport.ConcurrentDictionary, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NetLegacySupport.ConcurrentDictionary.1.0.2\lib\net35\NetLegacySupport.ConcurrentDictionary.dll</HintPath>
+    <Reference Include="NetLegacySupport.ConcurrentDictionary, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NetLegacySupport.ConcurrentDictionary.1.1.0\lib\net35\NetLegacySupport.ConcurrentDictionary.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="NetLegacySupport.Tuple, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NetLegacySupport.Tuple.1.0.2\lib\net35\NetLegacySupport.Tuple.dll</HintPath>
+    <Reference Include="NetLegacySupport.Tuple, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NetLegacySupport.Tuple.1.1.0\lib\net35\NetLegacySupport.Tuple.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
@@ -60,8 +60,8 @@
       <HintPath>..\..\packages\TrackableData.Protobuf.0.2.0-alpha3\lib\net35\TrackableData.Protobuf.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="TypeAlias, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\TypeAlias.1.0.2\lib\net35\TypeAlias.dll</HintPath>
+    <Reference Include="TypeAlias, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TypeAlias.1.1.1\lib\net35\TypeAlias.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
