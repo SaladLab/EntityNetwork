@@ -10,10 +10,9 @@ using Akka.Interfaced;
 using Akka.Interfaced.SlimSocket.Base;
 using Akka.Interfaced.SlimSocket.Server;
 using Common.Logging;
-using Domain.Interface;
+using Domain;
 using ProtoBuf.Meta;
 using TypeAlias;
-using UnityBasic.Program.Server;
 
 namespace Unity.Program.Server
 {
@@ -21,7 +20,7 @@ namespace Unity.Program.Server
     {
         static void Main(string[] args)
         {
-            if (typeof(ICounter) == null)
+            if (typeof(IUser) == null)
                 throw new Exception("Force interface module to be loaded");
 
             var system = ActorSystem.Create("MySystem");
@@ -58,11 +57,19 @@ namespace Unity.Program.Server
                                                           logger, socket, _tcpConnectionSettings, CreateInitialActor)));
         }
 
+        private static int _lastUserId = 0;
+        private static string CreateUserId()
+        {
+            var id = ++_lastUserId;
+            return "User:" + id;
+        }
+
         private static Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context, Socket socket)
         {
             return new[]
             {
-                Tuple.Create(context.ActorOf(Props.Create(() => new CounterActor())), typeof(ICounter)),
+                Tuple.Create(context.ActorOf(Props.Create(() => new UserActor(context.Self, CreateUserId()))),
+                             typeof(IUser)),
             };
         }
     }

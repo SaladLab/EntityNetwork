@@ -54,6 +54,10 @@
       <HintPath>..\..\..\packages\NetLegacySupport.ConcurrentDictionary.1.1.0\lib\net35\NetLegacySupport.ConcurrentDictionary.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NetLegacySupport.Tuple, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\NetLegacySupport.Tuple.1.1.0\lib\net35\NetLegacySupport.Tuple.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\protobuf-net.2.0.0.668\lib\net35\protobuf-net.dll</HintPath>
       <Private>True</Private>
@@ -93,8 +97,17 @@
     <Compile Include="..\Domain\Entity\SpaceShip.cs">
       <Link>Entity\SpaceShip.cs</Link>
     </Compile>
-    <Compile Include="..\Domain\Interface\ICounter.cs">
-      <Link>Interface\ICounter.cs</Link>
+    <Compile Include="..\Domain\Interface\GameInfo.cs">
+      <Link>Interface\GameInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IGameClient.cs">
+      <Link>Interface\IGameClient.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IGameObserver.cs">
+      <Link>Interface\IGameObserver.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IUser.cs">
+      <Link>Interface\IUser.cs</Link>
     </Compile>
     <Compile Include="Properties\Akka.Interfaced.CodeGen.Slim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

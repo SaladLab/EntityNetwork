@@ -14,26 +14,110 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
-#region Domain.Interface.ICounter
+#region Domain.IGameClient
 
-namespace Domain.Interface
+namespace Domain
 {
-    [PayloadTableForInterfacedActor(typeof(ICounter))]
-    public static class ICounter_PayloadTable
+    [PayloadTableForInterfacedActor(typeof(IGameClient))]
+    public static class IGameClient_PayloadTable
     {
         public static Type[,] GetPayloadTypes()
         {
             return new Type[,]
             {
-                {typeof(GetCounter_Invoke), typeof(GetCounter_Return)},
-                {typeof(IncCounter_Invoke), null},
+                {typeof(ZoneChange_Invoke), null},
             };
         }
 
         [ProtoContract, TypeAlias]
-        public class GetCounter_Invoke : IInterfacedPayload, IAsyncInvokable
+        public class ZoneChange_Invoke : IInterfacedPayload, ITagOverridable, IAsyncInvokable
         {
-            public Type GetInterfaceType() { return typeof(ICounter); }
+            [ProtoMember(1)] public System.Byte[] bytes;
+
+            public Type GetInterfaceType() { return typeof(IGameClient); }
+
+            public void SetTag(object value) { }
+
+            public Task<IValueGetable> InvokeAsync(object target)
+            {
+                return null;
+            }
+        }
+    }
+
+    public interface IGameClient_NoReply
+    {
+        void ZoneChange(System.Byte[] bytes);
+    }
+
+    public class GameClientRef : InterfacedActorRef, IGameClient, IGameClient_NoReply
+    {
+        public GameClientRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout)
+            : base(actor, requestWaiter, timeout)
+        {
+        }
+
+        public IGameClient_NoReply WithNoReply()
+        {
+            return this;
+        }
+
+        public GameClientRef WithRequestWaiter(IRequestWaiter requestWaiter)
+        {
+            return new GameClientRef(Actor, requestWaiter, Timeout);
+        }
+
+        public GameClientRef WithTimeout(TimeSpan? timeout)
+        {
+            return new GameClientRef(Actor, RequestWaiter, timeout);
+        }
+
+        public Task ZoneChange(System.Byte[] bytes)
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { bytes = bytes }
+            };
+            return SendRequestAndWait(requestMessage);
+        }
+
+        void IGameClient_NoReply.ZoneChange(System.Byte[] bytes)
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { bytes = bytes }
+            };
+            SendRequest(requestMessage);
+        }
+    }
+}
+
+#endregion
+
+#region Domain.IUser
+
+namespace Domain
+{
+    [PayloadTableForInterfacedActor(typeof(IUser))]
+    public static class IUser_PayloadTable
+    {
+        public static Type[,] GetPayloadTypes()
+        {
+            return new Type[,]
+            {
+                {typeof(EnterGame_Invoke), typeof(EnterGame_Return)},
+                {typeof(GetId_Invoke), typeof(GetId_Return)},
+                {typeof(LeaveGame_Invoke), null},
+            };
+        }
+
+        [ProtoContract, TypeAlias]
+        public class EnterGame_Invoke : IInterfacedPayload, IAsyncInvokable
+        {
+            [ProtoMember(1)] public System.String name;
+            [ProtoMember(2)] public System.Int32 observerId;
+
+            public Type GetInterfaceType() { return typeof(IUser); }
 
             public Task<IValueGetable> InvokeAsync(object target)
             {
@@ -42,21 +126,40 @@ namespace Domain.Interface
         }
 
         [ProtoContract, TypeAlias]
-        public class GetCounter_Return : IInterfacedPayload, IValueGetable
+        public class EnterGame_Return : IInterfacedPayload, IValueGetable
         {
-            [ProtoMember(1)] public System.Int32 v;
+            [ProtoMember(1)] public System.Tuple<System.Int32, Domain.GameInfo> v;
 
-            public Type GetInterfaceType() { return typeof(ICounter); }
+            public Type GetInterfaceType() { return typeof(IUser); }
 
             public object Value { get { return v; } }
         }
 
         [ProtoContract, TypeAlias]
-        public class IncCounter_Invoke : IInterfacedPayload, IAsyncInvokable
+        public class GetId_Invoke : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.Int32 delta;
+            public Type GetInterfaceType() { return typeof(IUser); }
 
-            public Type GetInterfaceType() { return typeof(ICounter); }
+            public Task<IValueGetable> InvokeAsync(object target)
+            {
+                return null;
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class GetId_Return : IInterfacedPayload, IValueGetable
+        {
+            [ProtoMember(1)] public System.String v;
+
+            public Type GetInterfaceType() { return typeof(IUser); }
+
+            public object Value { get { return v; } }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class LeaveGame_Invoke : IInterfacedPayload, IAsyncInvokable
+        {
+            public Type GetInterfaceType() { return typeof(IUser); }
 
             public Task<IValueGetable> InvokeAsync(object target)
             {
@@ -65,68 +168,130 @@ namespace Domain.Interface
         }
     }
 
-    public interface ICounter_NoReply
+    public interface IUser_NoReply
     {
-        void GetCounter();
-        void IncCounter(System.Int32 delta);
+        void EnterGame(System.String name, System.Int32 observerId);
+        void GetId();
+        void LeaveGame();
     }
 
-    public class CounterRef : InterfacedActorRef, ICounter, ICounter_NoReply
+    public class UserRef : InterfacedActorRef, IUser, IUser_NoReply
     {
-        public CounterRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout)
+        public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout)
             : base(actor, requestWaiter, timeout)
         {
         }
 
-        public ICounter_NoReply WithNoReply()
+        public IUser_NoReply WithNoReply()
         {
             return this;
         }
 
-        public CounterRef WithRequestWaiter(IRequestWaiter requestWaiter)
+        public UserRef WithRequestWaiter(IRequestWaiter requestWaiter)
         {
-            return new CounterRef(Actor, requestWaiter, Timeout);
+            return new UserRef(Actor, requestWaiter, Timeout);
         }
 
-        public CounterRef WithTimeout(TimeSpan? timeout)
+        public UserRef WithTimeout(TimeSpan? timeout)
         {
-            return new CounterRef(Actor, RequestWaiter, timeout);
+            return new UserRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task<System.Int32> GetCounter()
+        public Task<System.Tuple<System.Int32, Domain.GameInfo>> EnterGame(System.String name, System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new ICounter_PayloadTable.GetCounter_Invoke {  }
+                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observerId = observerId }
             };
-            return SendRequestAndReceive<System.Int32>(requestMessage);
+            return SendRequestAndReceive<System.Tuple<System.Int32, Domain.GameInfo>>(requestMessage);
         }
 
-        public Task IncCounter(System.Int32 delta)
+        public Task<System.String> GetId()
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new ICounter_PayloadTable.IncCounter_Invoke { delta = delta }
+                InvokePayload = new IUser_PayloadTable.GetId_Invoke {  }
+            };
+            return SendRequestAndReceive<System.String>(requestMessage);
+        }
+
+        public Task LeaveGame()
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IUser_PayloadTable.LeaveGame_Invoke {  }
             };
             return SendRequestAndWait(requestMessage);
         }
 
-        void ICounter_NoReply.GetCounter()
+        void IUser_NoReply.EnterGame(System.String name, System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new ICounter_PayloadTable.GetCounter_Invoke {  }
+                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observerId = observerId }
             };
             SendRequest(requestMessage);
         }
 
-        void ICounter_NoReply.IncCounter(System.Int32 delta)
+        void IUser_NoReply.GetId()
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new ICounter_PayloadTable.IncCounter_Invoke { delta = delta }
+                InvokePayload = new IUser_PayloadTable.GetId_Invoke {  }
             };
             SendRequest(requestMessage);
+        }
+
+        void IUser_NoReply.LeaveGame()
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IUser_PayloadTable.LeaveGame_Invoke {  }
+            };
+            SendRequest(requestMessage);
+        }
+    }
+}
+
+#endregion
+
+#region Domain.IGameObserver
+
+namespace Domain
+{
+    public static class IGameObserver_PayloadTable
+    {
+        [ProtoContract, TypeAlias]
+        public class Enter_Invoke : IInvokable
+        {
+            [ProtoMember(1)] public System.String userId;
+
+            public void Invoke(object target)
+            {
+                ((IGameObserver)target).Enter(userId);
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Leave_Invoke : IInvokable
+        {
+            [ProtoMember(1)] public System.String userId;
+
+            public void Invoke(object target)
+            {
+                ((IGameObserver)target).Leave(userId);
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class ZoneChange_Invoke : IInvokable
+        {
+            [ProtoMember(1)] public System.Byte[] bytes;
+
+            public void Invoke(object target)
+            {
+                ((IGameObserver)target).ZoneChange(bytes);
+            }
         }
     }
 }

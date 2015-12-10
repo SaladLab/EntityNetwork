@@ -5,8 +5,8 @@ using Akka.Interfaced;
 using Akka.Interfaced.SlimSocket.Base;
 using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
+using Domain;
 using Domain.Entity;
-using Domain.Interface;
 using TrackableData;
 using TypeAlias;
 
@@ -39,21 +39,17 @@ public class MainScene : MonoBehaviour
     {
         WriteLine("*** Counter ***");
 
-        var counter = new CounterRef(new SlimActorRef(1), new SlimRequestWaiter(G.Comm, this), null);
+        var user = new UserRef(new SlimActorRef(1), new SlimRequestWaiter(G.Comm, this), null);
 
-        yield return counter.IncCounter(1).WaitHandle;
-        yield return counter.IncCounter(2).WaitHandle;
-        yield return counter.IncCounter(3).WaitHandle;
-
-        var t1 = counter.IncCounter(-1);
+        var t1 = user.GetId();
         yield return t1.WaitHandle;
-        ShowResult(t1, "IncCount(-1)");
-
-        var t2 = counter.GetCounter();
-        yield return t2.WaitHandle;
-        ShowResult(t2, "GetCounter");
+        ShowResult(t1, "GetId()");
 
         WriteLine("");
+
+        var t2 = user.EnterGame("Test", 1);
+        yield return t2.WaitHandle;
+        ShowResult(t2, "GetId()");
     }
 
     void WriteLine(string text)
