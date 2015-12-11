@@ -22,8 +22,7 @@ namespace EntityNetwork
             return _entityMap.TryGetValue(entityId, out entity) ? entity : null;
         }
 
-        void IChannelToClientZone.Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags,
-                                        object snapshot, ITrackable[] trackables)
+        void IChannelToClientZone.Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload)
         {
             var entity = _entityFactory.Create(protoTypeType);
 
@@ -32,16 +31,8 @@ namespace EntityNetwork
             entity.OwnerId = ownerId;
             entity.Flags = flags;
 
-            if (snapshot != null)
-            {
-                entity.Snapshot = snapshot;
-            }
-
-            if (trackables != null)
-            {
-                for (int i = 0; i < trackables.Length; i++)
-                    entity.SetTrackableData(i, trackables[i]);
-            }
+            if (payload != null)
+                payload.Notify(entity);
 
             _entityMap.Add(entityId, entity);
 
@@ -72,21 +63,11 @@ namespace EntityNetwork
                 payload.InvokeClient((IEntityClientHandler)entity);
         }
 
-        void IChannelToClientZone.UpdateChange(int entityId, int trackableDataIndex, ITracker tracker)
+        void IChannelToClientZone.UpdateChange(int entityId, IUpdateChangePayload payload)
         {
             var entity = GetEntity(entityId);
             if (entity != null)
-            {
-                var trackable = entity.GetTrackableData(trackableDataIndex);
-                if (trackable != null)
-                {
-                    entity.OnTrackableDataChanging(trackableDataIndex, tracker);
-
-                    tracker.ApplyTo(trackable);
-
-                    entity.OnTrackableDataChanged(trackableDataIndex, tracker);
-                }
-            }
+                payload.Notify(entity);
         }
 
         public void RunAction(Action<ClientZone> action)

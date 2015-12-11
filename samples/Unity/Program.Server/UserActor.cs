@@ -29,8 +29,6 @@ namespace Unity.Program.Server
         [MessageHandler]
         private void OnMessage(ActorBoundSessionMessage.SessionTerminated message)
         {
-            // TODO: CALL MISSED!
-
             UnlinkAll();
             Context.Stop(Self);
         }
@@ -49,7 +47,7 @@ namespace Unity.Program.Server
             return Task.FromResult(_id);
         }
 
-        async Task<Tuple<int, GameInfo>> IUser.EnterGame(string name, int observerId)
+        async Task<Tuple<int, int, GameInfo>> IUser.EnterGame(string name, int observerId)
         {
             if (_enteredGame != null)
                 throw new InvalidOperationException();
@@ -59,18 +57,18 @@ namespace Unity.Program.Server
             IActorRef actor;
             try
             {
-                actor = await Context.ActorSelection("/user/game/" + name).ResolveOne(TimeSpan.Zero);
+                actor = await Context.ActorSelection("/user/game_" + name).ResolveOne(TimeSpan.Zero);
             }
             catch (ActorNotFoundException)
             {
-                actor = Context.System.ActorOf(Props.Create(() => new GameActor(name)));
+                actor = Context.System.ActorOf(Props.Create(() => new GameActor(name)), "game_" + name);
             }
             var game = new GameRef(actor, this, null);
 
             // enter the game
 
             var observer = new GameObserver(_clientSession, observerId);
-            var info = await game.Enter(_id, observer);
+            var ret = await game.Enter(_id, observer);
 
             // Bind an occupant actor with client session
 
@@ -78,7 +76,7 @@ namespace Unity.Program.Server
                 new ActorBoundSessionMessage.Bind(game.Actor, typeof(IGameClient), _id));
 
             _enteredGame = game;
-            return Tuple.Create(reply2.ActorId, info);
+            return Tuple.Create(reply2.ActorId, ret.Item1, ret.Item2);
         }
 
         async Task IUser.LeaveGame()

@@ -48,16 +48,11 @@ namespace EntityNetwork
 
             // propagate this to clients
 
-            var snapshot = entity.Snapshot;
-            var trackables = entity.TrackableDataCount > 0 ? new ITrackable[entity.TrackableDataCount] : null;
-            for (var i = 0; i < entity.TrackableDataCount; i++)
-                trackables[i] = entity.GetTrackableData(i);
-
+            var payload = entity.GetSpawnPayload();
             foreach (var clientChannel in _clientChannelMap.Values)
             {
                 // TODO: make batch api & use it for reducing network bandwidth in UNET
-                clientChannel.Spawn(entityId, protoTypeType, ownerId, flags,
-                                    snapshot, trackables);
+                clientChannel.Spawn(entityId, protoTypeType, ownerId, flags, payload);
             }
 
             return entity;
@@ -98,11 +93,14 @@ namespace EntityNetwork
             // TODO: Delayed ?
 
             var serverEntity = GetEntity(entityId);
-            var trackable = serverEntity.GetTrackableData(trackableDataIndex);
-            if (trackable.Changed)
+            var payload = serverEntity.GetUpdateChangePayload();
+            if (payload != null)
             {
                 foreach (var clientZone in _clientChannelMap.Values)
-                    clientZone.UpdateChange(entityId, trackableDataIndex, trackable.Tracker);
+                    clientZone.UpdateChange(entityId, payload);
+
+                for (var i = 0; i < serverEntity.TrackableDataCount; i++)
+                    serverEntity.GetTrackableData(i).Tracker.Clear();
             }
         }
 
@@ -117,16 +115,10 @@ namespace EntityNetwork
             var serverEntity = GetEntity(entityId);
             if (serverEntity != null)
             {
-                foreach (var channel in _clientChannelMap.Values)
-                    channel.Begin();
-
                 if ((payload.Flags & PayloadFlags.PassThrough) != 0)
                     ((IServerZone)this).Invoke(entityId, payload);
                 else
                     payload.InvokeServer((IEntityServerHandler)serverEntity);
-
-                foreach (var channel in _clientChannelMap.Values)
-                    channel.End();
             }
         }
 
@@ -146,12 +138,8 @@ namespace EntityNetwork
             {
                 channelToClientZone.Begin();
 
-                var trackables = entity.TrackableDataCount > 0 ? new ITrackable[entity.TrackableDataCount] : null;
-                for (var i = 0; i < entity.TrackableDataCount; i++)
-                    trackables[i] = entity.GetTrackableData(i);
-
-                channelToClientZone.Spawn(entity.Id, entity.ProtoTypeType, entity.OwnerId, entity.Flags,
-                                          entity.Snapshot, trackables);
+                var payload = entity.GetSpawnPayload();
+                channelToClientZone.Spawn(entity.Id, entity.ProtoTypeType, entity.OwnerId, entity.Flags, payload);
 
                 channelToClientZone.End();
             }

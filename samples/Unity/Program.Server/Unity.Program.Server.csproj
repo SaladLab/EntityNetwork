@@ -113,6 +113,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\core\EntityNetwork\EntityNetwork.csproj">
+      <Project>{b4dabd10-05b5-47f6-92d2-53f1cbe4214e}</Project>
+      <Name>EntityNetwork</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Domain\Unity.Domain.csproj">
       <Project>{8bc6e409-057f-44c5-a968-16b614c8fba6}</Project>
       <Name>Unity.Domain</Name>

@@ -1,5 +1,11 @@
 # TODO
 
+## TrackableData Extensibility
+
+- Current implementation supports only TrackablePoco.
+  This limitation is based on code generation using syntax analysis.
+  This can be alleviated by heuristic type guess.
+
 ## Time
 
 - Time is an essential factor for game

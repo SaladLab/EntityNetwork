@@ -68,7 +68,7 @@ namespace Unity.Program.Server
         {
             return new[]
             {
-                Tuple.Create(context.ActorOf(Props.Create(() => new UserActor(context.Self, CreateUserId()))),
+                Tuple.Create(context.System.ActorOf(Props.Create(() => new UserActor(context.Self, CreateUserId()))),
                              typeof(IUser)),
             };
         }

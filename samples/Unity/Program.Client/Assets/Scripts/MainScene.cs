@@ -7,21 +7,37 @@ using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
 using Domain;
 using Domain.Entity;
+using EntityNetwork;
 using TrackableData;
 using TypeAlias;
 
-public class MainScene : MonoBehaviour
+public class MainScene : MonoBehaviour, IGameObserver, ByteChannel
 {
+    private ClientZone _zone;
+    private ProtobufChannelToClientZoneInbound _zoneChannel;
+    private GameClientRef _gameClient;
+    private ObserverEventDispatcher _gameObserver;
+
     void Start()
     {
         ClientEntityFactory.Default.RootTransform = GameObject.Find("Canvas").transform;
 
-        var typeTable = new TypeAliasTable();
-        typeTable.AddTypeAlias(typeof(ISpaceShip), 12);
-        typeTable.AddTypeAlias(typeof(IBullet), 13);
-        EntityNetworkManager.TypeTable = typeTable;
+        StartCoroutine(ProcessConnectToServer());
+    }
 
-        EntityNetworkManager.ProtobufTypeModel = new DomainProtobufSerializer();
+    void Update()
+    {
+        if (_zone != null)
+        {
+            // make gameObserver work in main thread
+            _gameObserver.Pending = false;
+            _gameObserver.Pending = true;
+        }
+    }
+
+    IEnumerator ProcessConnectToServer()
+    {
+        WriteLine("Connect");
 
         var serializer = new PacketSerializer(
             new PacketSerializerBase.Data(
@@ -32,12 +48,7 @@ public class MainScene : MonoBehaviour
             _ => new TcpConnection(serializer, LogManager.GetLogger("Connection")));
         G.Comm.Start();
 
-        StartCoroutine(ProcessTestCounter());
-    }
-
-    IEnumerator ProcessTestCounter()
-    {
-        WriteLine("*** Counter ***");
+        // get user
 
         var user = new UserRef(new SlimActorRef(1), new SlimRequestWaiter(G.Comm, this), null);
 
@@ -45,11 +56,44 @@ public class MainScene : MonoBehaviour
         yield return t1.WaitHandle;
         ShowResult(t1, "GetId()");
 
-        WriteLine("");
+        if (t1.Status != TaskStatus.RanToCompletion)
+            yield break;
 
-        var t2 = user.EnterGame("Test", 1);
+        var observerId = G.Comm.IssueObserverId();
+        _gameObserver = new ObserverEventDispatcher(this, startPending: true);
+        G.Comm.AddObserver(observerId, _gameObserver);
+
+        // enter game
+
+        var t2 = user.EnterGame("Test", observerId);
         yield return t2.WaitHandle;
-        ShowResult(t2, "GetId()");
+        ShowResult(t2, "EnterGame()");
+
+        if (t2.Status != TaskStatus.RanToCompletion)
+            yield break;
+
+        // TODO: MAKE OFFICIAL
+        EntityNetworkClient.LocalClientId = t2.Result.Item2;
+
+        _gameClient = new GameClientRef(
+            new SlimActorRef(t2.Result.Item1),
+            new SlimRequestWaiter(G.Comm, this), null);
+
+        _zone = new ClientZone(
+            ClientEntityFactory.Default,
+            new ProtobufChannelToServerZoneOutbound
+            {
+                TypeTable = new TypeAliasTable(),
+                TypeModel = new DomainProtobufSerializer(),
+                OutboundChannel = this
+            });
+
+        _zoneChannel = new ProtobufChannelToClientZoneInbound
+        {
+            TypeTable = new TypeAliasTable(),
+            TypeModel = new DomainProtobufSerializer(),
+            InboundClientZone = _zone
+        };
     }
 
     void WriteLine(string text)
@@ -75,5 +119,26 @@ public class MainScene : MonoBehaviour
             WriteLine(string.Format("{0}: Result = {1}", name, task.Result));
         else
             ShowResult((Task)task, name);
+    }
+
+    void IGameObserver.Enter(string userId)
+    {
+        Debug.LogFormat("IGameObserver.Enter({0})", userId);
+    }
+
+    void IGameObserver.Leave(string userId)
+    {
+        Debug.LogFormat("IGameObserver.Leave({0})", userId);
+    }
+
+    void IGameObserver.ZoneChange(byte[] bytes)
+    {
+        Debug.LogFormat("IGameObserver.ZoneChange({0})", bytes.Length);
+        _zoneChannel.Write(bytes);
+    }
+
+    void ByteChannel.Write(byte[] bytes)
+    {
+        _gameClient.ZoneChange(null, bytes);
     }
 }

@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props" Condition="Exists('..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props')" />
   <Import Project="..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.props" Condition="Exists('..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props" Condition="Exists('$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props')" />
@@ -67,6 +68,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -99,6 +101,7 @@
     <Compile Include="Properties\Akka.Interfaced.CodeGen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\EntityNetwork.CodeGen.cs" />
+    <Compile Include="Properties\TrackableData.CodeGen.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\core\EntityNetwork\EntityNetwork.csproj">
@@ -117,8 +120,11 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets'))" />
   </Target>
   <Import Project="..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.targets" Condition="Exists('..\..\..\packages\Akka.Interfaced.Templates-Protobuf.0.2.0-alpha3\build\Akka.Interfaced.Templates-Protobuf.targets')" />
+  <Import Project="..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets" Condition="Exists('..\..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -222,6 +222,47 @@ namespace Basic
                 ((ISpaceShipClientHandler)target).OnStop(x, y);
             }
         }
+
+        [ProtoContract, TypeAlias]
+        public class Spawn : ISpawnPayload
+        {
+            [ProtoMember(1)] public TrackableSpaceShipData Data;
+            [ProtoMember(2)] public SpaceShipSnapshot Snapshot;
+
+            public void Gather(IServerEntity entity)
+            {
+                var e = (SpaceShipServerBase)entity;
+                Data = e.Data;
+                Snapshot = e.OnSnapshot();
+            }
+
+            public void Notify(IClientEntity entity)
+            {
+                var e = (SpaceShipClientBase)entity;
+                e.Data = Data;
+                e.OnSnapshot(Snapshot);
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class UpdateChange : IUpdateChangePayload
+        {
+            [ProtoMember(1)] public TrackablePocoTracker<ISpaceShipData> DataTracker;
+
+            public void Gather(IServerEntity entity)
+            {
+                var e = (SpaceShipServerBase)entity;
+                if (e.Data.Changed)
+                    DataTracker = (TrackablePocoTracker<ISpaceShipData>)e.Data.Tracker;
+            }
+
+            public void Notify(IClientEntity entity)
+            {
+                var e = (SpaceShipClientBase)entity;
+                if (DataTracker != null)
+                    DataTracker.ApplyTo(e.Data);
+            }
+        }
     }
 
     public interface ISpaceShipServerHandler : IEntityServerHandler
@@ -254,6 +295,20 @@ namespace Basic
         public override void SetTrackableData(int index, ITrackable trackable)
         {
             if (index == 0) Data = (TrackableSpaceShipData)trackable;
+        }
+
+        public override ISpawnPayload GetSpawnPayload()
+        {
+            var payload = new ISpaceShip_PayloadTable.Spawn();
+            payload.Gather(this);
+            return payload;
+        }
+
+        public override IUpdateChangePayload GetUpdateChangePayload()
+        {
+            var payload = new ISpaceShip_PayloadTable.UpdateChange();
+            payload.Gather(this);
+            return payload;
         }
 
         public void Hit(float x = 0f, float y = 0f)

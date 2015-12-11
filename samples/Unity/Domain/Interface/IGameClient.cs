@@ -8,6 +8,6 @@ namespace Domain
     [TagOverridable("senderUserId")]
     public interface IGameClient : IInterfacedActor
     {
-        Task ZoneChange(byte[] bytes);
+        Task ZoneChange(string senderUserId, byte[] bytes);
     }
 }

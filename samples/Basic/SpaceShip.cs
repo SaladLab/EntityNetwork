@@ -7,8 +7,7 @@ namespace Basic
     {
         public override SpaceShipSnapshot OnSnapshot()
         {
-            // TODO: IMPLEMENT
-            return new SpaceShipSnapshot();
+            return new SpaceShipSnapshot { Name = "Houston" };
         }
 
         public void OnSay(string msg)
@@ -32,7 +31,7 @@ namespace Basic
     {
         public override void OnSnapshot(SpaceShipSnapshot snapshot)
         {
-            // TODO: IMPLEMENT
+            Console.WriteLine($"Client.OnSnapshot({snapshot.Name})");
         }
 
         public void OnSay(string msg)

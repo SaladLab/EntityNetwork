@@ -5,6 +5,11 @@ namespace Domain.Entity
 {
     public class ServerSpaceShip : SpaceShipServerBase, ISpaceShipServerHandler
     {
+        public override SpaceShipSnapshot OnSnapshot()
+        {
+            return new SpaceShipSnapshot();
+        }
+
         public void OnSay(string msg)
         {
             Console.WriteLine($"Say({msg})");

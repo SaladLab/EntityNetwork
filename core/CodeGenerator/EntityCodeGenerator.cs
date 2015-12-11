@@ -31,7 +31,8 @@ namespace CodeGen
 
             // Generate all
 
-            GeneratePayloadCode(idecl, writer, methods, method2PayloadTypeNameMap);
+            GeneratePayloadCode(idecl, writer, methods, method2PayloadTypeNameMap,
+                                snapshotProperty, trackableProperties);
             GenerateServerEntityBaseCode(idecl, writer, methods, method2PayloadTypeNameMap,
                                          snapshotProperty, trackableProperties);
             GenerateClientEntityBaseCode(idecl, writer, methods, method2PayloadTypeNameMap,
@@ -43,7 +44,8 @@ namespace CodeGen
 
         private void GeneratePayloadCode(
             InterfaceDeclarationSyntax idecl, ICodeGenWriter writer,
-            MethodDeclarationSyntax[] methods, Dictionary<MethodDeclarationSyntax, string> method2PayloadTypeNameMap)
+            MethodDeclarationSyntax[] methods, Dictionary<MethodDeclarationSyntax, string> method2PayloadTypeNameMap,
+            PropertyDeclarationSyntax snapshotProperty, PropertyDeclarationSyntax[] trackableProperties)
         {
             var sb = new StringBuilder();
             var className = Utility.GetPayloadTableClassName(idecl);
@@ -170,9 +172,171 @@ namespace CodeGen
                 sb.Append("\t}\n");
             }
 
+            // generate a payload class for spawn
+
+            if (snapshotProperty != null || (trackableProperties != null && trackableProperties.Length > 0))
+            {
+                sb.AppendLine();
+                GeneratePayloadCodeForSpawn(idecl, sb, snapshotProperty, trackableProperties);
+            }
+
+            // generate a payload class for update-change
+
+            if (trackableProperties != null && trackableProperties.Length > 0)
+            {
+                sb.AppendLine();
+                GeneratePayloadCodeForUpdateChange(idecl, sb, trackableProperties);
+            }
+
             sb.Append("}");
 
             writer.AddCode(sb.ToString());
+        }
+
+        private void GeneratePayloadCodeForSpawn(
+            InterfaceDeclarationSyntax idecl, StringBuilder sb,
+            PropertyDeclarationSyntax snapshotProperty, PropertyDeclarationSyntax[] trackableProperties)
+        {
+            if (Options.UseProtobuf)
+                sb.Append("\t[ProtoContract, TypeAlias]\n");
+
+            sb.AppendFormat("\tpublic class Spawn : ISpawnPayload\n");
+            sb.Append("\t{\n");
+
+            // Members
+
+            var protobufMemberIndex = 0;
+
+            if (trackableProperties != null)
+            {
+                foreach (var p in trackableProperties)
+                {
+                    sb.Append("\t\t");
+                    if (Options.UseProtobuf)
+                    {
+                        protobufMemberIndex += 1;
+                        sb.Append($"[ProtoMember({protobufMemberIndex})] ");
+                    }
+
+                    sb.Append($"public Trackable{p.Type.ToString().Substring(1)} {p.Identifier};\n");
+                }
+            }
+
+            if (snapshotProperty != null)
+            {
+                sb.Append("\t\t");
+                if (Options.UseProtobuf)
+                {
+                    protobufMemberIndex += 1;
+                    sb.Append($"[ProtoMember({protobufMemberIndex})] ");
+                }
+
+                sb.Append($"public {snapshotProperty.Type} {snapshotProperty.Identifier};\n");
+            }
+
+            // Notify
+
+            sb.AppendLine();
+            sb.Append("\t\tpublic void Gather(IServerEntity entity)\n");
+            sb.Append("\t\t{\n");
+            sb.Append($"\t\t\tvar e = ({Utility.GetServerEntityBaseClassName(idecl)})entity;\n");
+
+            if (trackableProperties != null)
+            {
+                foreach (var p in trackableProperties)
+                {
+                    sb.Append($"\t\t\t{p.Identifier} = e.{p.Identifier};\n");
+                }
+            }
+
+            if (snapshotProperty != null)
+            {
+                sb.Append($"\t\t\t{snapshotProperty.Identifier} = e.OnSnapshot();\n");
+            }
+
+            sb.Append("\t\t}\n");
+
+            // Gather
+
+            sb.AppendLine();
+            sb.Append("\t\tpublic void Notify(IClientEntity entity)\n");
+            sb.Append("\t\t{\n");
+            sb.Append($"\t\t\tvar e = ({Utility.GetClientEntityBaseClassName(idecl)})entity;\n");
+
+            if (trackableProperties != null)
+            {
+                foreach (var p in trackableProperties)
+                {
+                    sb.Append($"\t\t\te.{p.Identifier} = {p.Identifier};\n");
+                }
+            }
+
+            if (snapshotProperty != null)
+            {
+                sb.Append($"\t\t\te.OnSnapshot({snapshotProperty.Identifier});\n");
+            }
+
+            sb.Append("\t\t}\n");
+
+            sb.Append("\t}\n");
+        }
+
+        private void GeneratePayloadCodeForUpdateChange(
+            InterfaceDeclarationSyntax idecl, StringBuilder sb,
+            PropertyDeclarationSyntax[] trackableProperties)
+        {
+            if (Options.UseProtobuf)
+                sb.Append("\t[ProtoContract, TypeAlias]\n");
+
+            sb.AppendFormat("\tpublic class UpdateChange : IUpdateChangePayload\n");
+            sb.Append("\t{\n");
+
+            // Members
+
+            var protobufMemberIndex = 0;
+            foreach (var p in trackableProperties)
+            {
+                sb.Append("\t\t");
+                if (Options.UseProtobuf)
+                {
+                    protobufMemberIndex += 1;
+                    sb.Append($"[ProtoMember({protobufMemberIndex})] ");
+                }
+
+                sb.Append($"public {Utility.GetTrackerClassName(p.Type)} {p.Identifier}Tracker;\n");
+            }
+
+            // Gather
+
+            sb.AppendLine();
+            sb.Append("\t\tpublic void Gather(IServerEntity entity)\n");
+            sb.Append("\t\t{\n");
+            sb.Append($"\t\t\tvar e = ({Utility.GetServerEntityBaseClassName(idecl)})entity;\n");
+
+            foreach (var p in trackableProperties)
+            {
+                sb.Append($"\t\t\tif (e.{p.Identifier}.Changed)\n");
+                sb.Append($"\t\t\t\t{p.Identifier}Tracker = ({Utility.GetTrackerClassName(p.Type)})e.{p.Identifier}.Tracker;\n");
+            }
+
+            sb.Append("\t\t}\n");
+
+            // Notify
+
+            sb.AppendLine();
+            sb.Append("\t\tpublic void Notify(IClientEntity entity)\n");
+            sb.Append("\t\t{\n");
+            sb.Append($"\t\t\tvar e = ({Utility.GetClientEntityBaseClassName(idecl)})entity;\n");
+
+            foreach (var p in trackableProperties)
+            {
+                sb.Append($"\t\t\tif ({p.Identifier}Tracker != null)\n");
+                sb.Append($"\t\t\t\t{p.Identifier}Tracker.ApplyTo(e.{p.Identifier});\n");
+            }
+
+            sb.Append("\t\t}\n");
+
+            sb.Append("\t}\n");
         }
 
         private void GenerateServerEntityBaseCode(
@@ -251,6 +415,28 @@ namespace CodeGen
                 sb.Append($"\t\tif (index == {i}) {trackableProperties[i].Identifier} = (Trackable{trackableProperties[i].Type.ToString().Substring(1)})trackable;\n");
             }
             sb.Append("\t}\n");
+
+            if (trackableProperties.Length > 0 || snapshotProperty != null)
+            {
+                sb.AppendLine();
+                sb.Append("\tpublic override ISpawnPayload GetSpawnPayload()\n");
+                sb.Append("\t{\n");
+                sb.Append($"\t\tvar payload = new {payloadTableClassName}.Spawn();\n");
+                sb.Append($"\t\tpayload.Gather(this);\n");
+                sb.Append($"\t\treturn payload;\n");
+                sb.Append("\t}\n");
+            }
+
+            if (trackableProperties.Length > 0)
+            {
+                sb.AppendLine();
+                sb.Append("\tpublic override IUpdateChangePayload GetUpdateChangePayload()\n");
+                sb.Append("\t{\n");
+                sb.Append($"\t\tvar payload = new {payloadTableClassName}.UpdateChange();\n");
+                sb.Append($"\t\tpayload.Gather(this);\n");
+                sb.Append($"\t\treturn payload;\n");
+                sb.Append("\t}\n");
+            }
 
             var classMethods = methods.Where(
                 m => m.AttributeLists.GetAttribute("ToServerAttribute") == null).ToArray();

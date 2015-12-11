@@ -39,6 +39,9 @@ namespace EntityNetwork
         ITrackable GetTrackableData(int index);
         void SetTrackableData(int index, ITrackable trackable);
 
+        ISpawnPayload GetSpawnPayload();
+        IUpdateChangePayload GetUpdateChangePayload();
+
         void OnSpawn();
         void OnDespawn();
     }
@@ -51,11 +54,24 @@ namespace EntityNetwork
         public int OwnerId { get; set; }
         public EntityFlags Flags { get; set; }
 
-        public virtual object Snapshot { get { return null; } }
+        public virtual object Snapshot
+        {
+            get { return null; }
+        }
 
         public abstract int TrackableDataCount { get; }
         public abstract ITrackable GetTrackableData(int index);
         public abstract void SetTrackableData(int index, ITrackable trackable);
+
+        public virtual ISpawnPayload GetSpawnPayload()
+        {
+            return null;
+        }
+
+        public virtual IUpdateChangePayload GetUpdateChangePayload()
+        {
+            return null;
+        }
 
         public virtual void OnSpawn()
         {

@@ -41,8 +41,7 @@ namespace EntityNetwork
             return bytes;
         }
 
-        public void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags,
-                                        object snapshot, ITrackable[] trackables)
+        public void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload)
         {
             _writer.Write((byte)1);
             _writer.Write(entityId);
@@ -52,17 +51,7 @@ namespace EntityNetwork
             _writer.Write(typeAlias);
             _writer.Write(ownerId);
             _writer.Write((byte)flags);
-            ProtobufStreamHelper.WriteObject(_writer, snapshot, TypeTable, TypeModel);
-            if (trackables != null)
-            {
-                _writer.Write((byte)trackables.Length);
-                foreach (var trackable in trackables)
-                    ProtobufStreamHelper.WriteObject(_writer, trackable, TypeTable, TypeModel);
-            }
-            else
-            {
-                _writer.Write((byte)0);
-            }
+            ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
         }
 
         public void Despawn(int entityId)
@@ -78,12 +67,11 @@ namespace EntityNetwork
             ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
         }
 
-        public void UpdateChange(int entityId, int trackableDataIndex, ITracker tracker)
+        public void UpdateChange(int entityId, IUpdateChangePayload payload)
         {
             _writer.Write((byte)4);
             _writer.Write(entityId);
-            _writer.Write((byte)trackableDataIndex);
-            ProtobufStreamHelper.WriteObject(_writer, tracker, TypeTable, TypeModel);
+            ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
         }
     }
 
@@ -115,13 +103,8 @@ namespace EntityNetwork
                             var typeAlias = reader.ReadInt32();
                             var ownerId = reader.ReadInt32();
                             var flags = (EntityFlags)reader.ReadByte();
-                            var snapshot = ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
-                            var trackableCount = (int)reader.ReadByte();
-                            var trackables = trackableCount > 0 ? new ITrackable[trackableCount] : null;
-                            for (int i = 0; i < trackableCount; i++)
-                                trackables[i] = (ITrackable)ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
-                            channelToClientZone.Spawn(entityId, TypeTable.GetType(typeAlias), ownerId, flags,
-                                                      snapshot, trackables);
+                            var payload = (ISpawnPayload)ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
+                            channelToClientZone.Spawn(entityId, TypeTable.GetType(typeAlias), ownerId, flags, payload);
                             break;
                         }
                         case 2:
@@ -133,18 +116,15 @@ namespace EntityNetwork
                         case 3:
                         {
                             var entityId = reader.ReadInt32();
-                            var invokePayload = (IInvokePayload)ProtobufStreamHelper.ReadObject(
-                                reader, TypeTable, TypeModel);
-                            channelToClientZone.Invoke(entityId, invokePayload);
+                            var payload = (IInvokePayload)ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
+                            channelToClientZone.Invoke(entityId, payload);
                             break;
                         }
                         case 4:
                         {
                             var entityId = reader.ReadInt32();
-                            var trackableDataIndex = reader.ReadByte();
-                            var tracker = (ITracker)ProtobufStreamHelper.ReadObject(
-                                reader, TypeTable, TypeModel);
-                            channelToClientZone.UpdateChange(entityId, trackableDataIndex, tracker);
+                            var payload = (IUpdateChangePayload)ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
+                            channelToClientZone.UpdateChange(entityId, payload);
                             break;
                         }
                         default:

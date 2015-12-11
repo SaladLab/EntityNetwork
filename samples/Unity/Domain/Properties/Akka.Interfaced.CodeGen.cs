@@ -42,14 +42,14 @@ namespace Domain
             public async Task<IValueGetable> InvokeAsync(object target)
             {
                 var __v = await((IGame)target).Enter(userId, observer);
-                return (IValueGetable)(new Enter_Return { v = __v });
+                return (IValueGetable)(new Enter_Return { v = (System.Tuple<System.Int32, Domain.GameInfo>)__v });
             }
         }
 
         [ProtoContract, TypeAlias]
         public class Enter_Return : IInterfacedPayload, IValueGetable
         {
-            [ProtoMember(1)] public Domain.GameInfo v;
+            [ProtoMember(1)] public System.Tuple<System.Int32, Domain.GameInfo> v;
 
             public Type GetInterfaceType() { return typeof(IGame); }
 
@@ -116,13 +116,13 @@ namespace Domain
             return new GameRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task<Domain.GameInfo> Enter(System.String userId, Domain.IGameObserver observer)
+        public Task<System.Tuple<System.Int32, Domain.GameInfo>> Enter(System.String userId, Domain.IGameObserver observer)
         {
             var requestMessage = new RequestMessage
             {
                 InvokePayload = new IGame_PayloadTable.Enter_Invoke { userId = userId, observer = (Domain.GameObserver)observer }
             };
-            return SendRequestAndReceive<Domain.GameInfo>(requestMessage);
+            return SendRequestAndReceive<System.Tuple<System.Int32, Domain.GameInfo>>(requestMessage);
         }
 
         public Task Leave(System.String userId)
@@ -174,15 +174,16 @@ namespace Domain
         [ProtoContract, TypeAlias]
         public class ZoneChange_Invoke : IInterfacedPayload, ITagOverridable, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.Byte[] bytes;
+            [ProtoMember(1)] public System.String senderUserId;
+            [ProtoMember(2)] public System.Byte[] bytes;
 
             public Type GetInterfaceType() { return typeof(IGameClient); }
 
-            public void SetTag(object value) { }
+            public void SetTag(object value) { senderUserId = (System.String)value; }
 
             public async Task<IValueGetable> InvokeAsync(object target)
             {
-                await ((IGameClient)target).ZoneChange(bytes);
+                await ((IGameClient)target).ZoneChange(senderUserId, bytes);
                 return null;
             }
         }
@@ -190,7 +191,7 @@ namespace Domain
 
     public interface IGameClient_NoReply
     {
-        void ZoneChange(System.Byte[] bytes);
+        void ZoneChange(System.String senderUserId, System.Byte[] bytes);
     }
 
     [ProtoContract, TypeAlias]
@@ -232,20 +233,20 @@ namespace Domain
             return new GameClientRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task ZoneChange(System.Byte[] bytes)
+        public Task ZoneChange(System.String senderUserId, System.Byte[] bytes)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { bytes = bytes }
+                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { senderUserId = senderUserId, bytes = bytes }
             };
             return SendRequestAndWait(requestMessage);
         }
 
-        void IGameClient_NoReply.ZoneChange(System.Byte[] bytes)
+        void IGameClient_NoReply.ZoneChange(System.String senderUserId, System.Byte[] bytes)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { bytes = bytes }
+                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { senderUserId = senderUserId, bytes = bytes }
             };
             SendRequest(requestMessage);
         }
@@ -282,14 +283,14 @@ namespace Domain
             public async Task<IValueGetable> InvokeAsync(object target)
             {
                 var __v = await((IUser)target).EnterGame(name, observerId);
-                return (IValueGetable)(new EnterGame_Return { v = (System.Tuple<System.Int32, Domain.GameInfo>)__v });
+                return (IValueGetable)(new EnterGame_Return { v = (System.Tuple<System.Int32, System.Int32, Domain.GameInfo>)__v });
             }
         }
 
         [ProtoContract, TypeAlias]
         public class EnterGame_Return : IInterfacedPayload, IValueGetable
         {
-            [ProtoMember(1)] public System.Tuple<System.Int32, Domain.GameInfo> v;
+            [ProtoMember(1)] public System.Tuple<System.Int32, System.Int32, Domain.GameInfo> v;
 
             public Type GetInterfaceType() { return typeof(IUser); }
 
@@ -377,13 +378,13 @@ namespace Domain
             return new UserRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task<System.Tuple<System.Int32, Domain.GameInfo>> EnterGame(System.String name, System.Int32 observerId)
+        public Task<System.Tuple<System.Int32, System.Int32, Domain.GameInfo>> EnterGame(System.String name, System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
                 InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observerId = observerId }
             };
-            return SendRequestAndReceive<System.Tuple<System.Int32, Domain.GameInfo>>(requestMessage);
+            return SendRequestAndReceive<System.Tuple<System.Int32, System.Int32, Domain.GameInfo>>(requestMessage);
         }
 
         public Task<System.String> GetId()

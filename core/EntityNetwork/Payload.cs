@@ -32,4 +32,16 @@ namespace EntityNetwork
         void InvokeServer(IEntityServerHandler target);
         void InvokeClient(IEntityClientHandler target);
     }
+
+    public interface ISpawnPayload
+    {
+        void Gather(IServerEntity entity);
+        void Notify(IClientEntity entity);
+    }
+
+    public interface IUpdateChangePayload
+    {
+        void Gather(IServerEntity entity);
+        void Notify(IClientEntity entity);
+    }
 }

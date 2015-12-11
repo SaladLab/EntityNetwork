@@ -10,13 +10,21 @@ using TypeAlias;
 
 namespace Basic
 {
+    class DummyChannelToServerZoneInbound : ByteChannel
+    {
+        public ProtobufChannelToServerZoneInbound Channel;
+
+        public void Write(byte[] bytes)
+        {
+            ((ServerZone)Channel.InboundServerZone).RunAction(_ => { Channel.Write(bytes); });
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
             var typeTable = new TypeAliasTable();
-            typeTable.AddTypeAlias(typeof(TrackableSpaceShipData), 10);
-            typeTable.AddTypeAlias(typeof(TrackablePocoTracker<ISpaceShipData>), 11);
 
             var typeModel = TypeModel.Create();
             typeModel.Add(typeof(TrackablePocoTracker<ISpaceShipData>), false)
@@ -30,11 +38,14 @@ namespace Basic
                 {
                     TypeTable = typeTable,
                     TypeModel = typeModel,
-                    OutboundChannel = new ProtobufChannelToServerZoneInbound()
+                    OutboundChannel = new DummyChannelToServerZoneInbound
                     {
-                        TypeTable = typeTable,
-                        TypeModel = typeModel,
-                        InboundServerZone = serverZone,
+                        Channel = new ProtobufChannelToServerZoneInbound
+                        {
+                            TypeTable = typeTable,
+                            TypeModel = typeModel,
+                            InboundServerZone = serverZone,
+                        }
                     }
                 };
                 var clientZone = new ClientZone(EntityFactory.Default, channelUp);

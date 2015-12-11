@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using System;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace CodeGen
 {
@@ -17,6 +18,11 @@ namespace CodeGen
         public static string GetClientEntityBaseClassName(InterfaceDeclarationSyntax idecl)
         {
             return idecl.Identifier.ToString().Substring(1) + "ClientBase";
+        }
+
+        public static string GetTrackerClassName(TypeSyntax type)
+        {
+            return "TrackablePocoTracker<" + type + ">";
         }
     }
 }

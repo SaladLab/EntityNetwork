@@ -51,6 +51,10 @@ public class ClientSpaceShip : SpaceShipClientBase, ISpaceShipClientHandler
         }
     }
 
+    public override void OnSnapshot(SpaceShipSnapshot snapshot)
+    {
+    }
+
     void ISpaceShipClientHandler.OnSay(string msg)
     {
         Debug.Log("OnSay");

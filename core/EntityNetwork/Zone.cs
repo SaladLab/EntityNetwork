@@ -30,10 +30,9 @@ namespace EntityNetwork
 
     public interface IChannelToClientZone
     {
-        void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags,
-                   object snapshot, ITrackable[] trackables);
+        void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload);
         void Despawn(int entityId);
         void Invoke(int entityId, IInvokePayload payload);
-        void UpdateChange(int entityId, int trackableDataIndex, ITracker tracker);
+        void UpdateChange(int entityId, IUpdateChangePayload payload);
     }
 }
