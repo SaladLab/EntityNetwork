@@ -260,7 +260,11 @@ namespace Basic
             {
                 var e = (SpaceShipClientBase)entity;
                 if (DataTracker != null)
+                {
+                    e.OnTrackableDataChanging(0, DataTracker);
                     DataTracker.ApplyTo(e.Data);
+                    e.OnTrackableDataChanged(0, DataTracker);
+                }
             }
         }
     }

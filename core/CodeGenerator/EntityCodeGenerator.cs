@@ -328,10 +328,15 @@ namespace CodeGen
             sb.Append("\t\t{\n");
             sb.Append($"\t\t\tvar e = ({Utility.GetClientEntityBaseClassName(idecl)})entity;\n");
 
-            foreach (var p in trackableProperties)
+            for (int i = 0; i < trackableProperties.Length; i++)
             {
+                var p = trackableProperties[i];
                 sb.Append($"\t\t\tif ({p.Identifier}Tracker != null)\n");
+                sb.Append("\t\t\t{\n");
+                sb.Append($"\t\t\t\te.OnTrackableDataChanging({i}, {p.Identifier}Tracker);\n");
                 sb.Append($"\t\t\t\t{p.Identifier}Tracker.ApplyTo(e.{p.Identifier});\n");
+                sb.Append($"\t\t\t\te.OnTrackableDataChanged({i}, {p.Identifier}Tracker);\n");
+                sb.Append("\t\t\t}\n");
             }
 
             sb.Append("\t\t}\n");
