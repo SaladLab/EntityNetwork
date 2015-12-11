@@ -10,10 +10,6 @@
 
 - Time is an essential factor for game
 
-## Saved Method
-
-- [Saved] for new comers
-
 ## Ownership
 
 Every entity has ownership.
@@ -28,9 +24,13 @@ Every entity has ownership.
 - Use TrackableData! (Done)
 - Client-side update ? (allowed?)
 
-## Constructor or Initializer
+## Constructor or Initializer *Done*
 
-- It's required to init entities showing up properly.
+- It's required to init entities showing up properly. (Done with Snapshot)
+
+## Saved Method
+
+- [Saved] for new comers (REPLACED WITH TrackableData)
 
 # IDEA
 

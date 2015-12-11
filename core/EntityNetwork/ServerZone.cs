@@ -12,6 +12,9 @@ namespace EntityNetwork
         private int _lastEntityId;
         private readonly Dictionary<int, IServerEntity> _entityMap = new Dictionary<int, IServerEntity>();
 
+        private int _beginActionCount;
+        private readonly HashSet<int> _changedEntitySet = new HashSet<int>();
+
         private readonly Dictionary<int, ProtobufChannelToClientZoneOutbound> _clientChannelMap = 
             new Dictionary<int, ProtobufChannelToClientZoneOutbound>();
 
@@ -90,18 +93,7 @@ namespace EntityNetwork
 
         private void OnEntityTrackableHasChangeSet(int entityId, int trackableDataIndex)
         {
-            // TODO: Delayed ?
-
-            var serverEntity = GetEntity(entityId);
-            var payload = serverEntity.GetUpdateChangePayload();
-            if (payload != null)
-            {
-                foreach (var clientZone in _clientChannelMap.Values)
-                    clientZone.UpdateChange(entityId, payload);
-
-                for (var i = 0; i < serverEntity.TrackableDataCount; i++)
-                    serverEntity.GetTrackableData(i).Tracker.Clear();
-            }
+            _changedEntitySet.Add(entityId);
         }
 
         void IZone.Invoke(int entityId, IInvokePayload payload)
@@ -170,15 +162,53 @@ namespace EntityNetwork
             return true;
         }
 
-        public void RunAction(Action<ServerZone> action)
+        public void BeginAction()
         {
+            _beginActionCount += 1;
+
             foreach (var channel in _clientChannelMap.Values)
                 channel.Begin();
+        }
 
-            action(this);
+        public void EndAction()
+        {
+            if (_beginActionCount == 0)
+                throw new InvalidOperationException("BeginAction required!");
+
+            _beginActionCount -= 1;
+            if (_beginActionCount > 0)
+                return;
+
+            // notify trackable-changes of entities to clients
+
+            if (_changedEntitySet.Count > 0)
+            {
+                foreach (var entityId in _changedEntitySet)
+                {
+                    var entity = GetEntity(entityId);
+                    if (entity != null)
+                    {
+                        var payload = entity.GetUpdateChangePayload();
+
+                        foreach (var clientZone in _clientChannelMap.Values)
+                            clientZone.UpdateChange(entityId, payload);
+
+                        for (var i = 0; i < entity.TrackableDataCount; i++)
+                            entity.GetTrackableData(i).Tracker.Clear();
+                    }
+                }
+                _changedEntitySet.Clear();
+            }
 
             foreach (var channel in _clientChannelMap.Values)
                 channel.End();
+        }
+
+        public void RunAction(Action<ServerZone> action)
+        {
+            BeginAction();
+            action(this);
+            EndAction();
         }
     }
 }
