@@ -18,6 +18,8 @@ namespace EntityNetwork
         private readonly Dictionary<int, ProtobufChannelToClientZoneOutbound> _clientChannelMap =
             new Dictionary<int, ProtobufChannelToClientZoneOutbound>();
 
+        private readonly DateTime _startTime;
+
         public Action<IServerEntity> EntitySpawned;
         public Action<IServerEntity> EntityDespawned;
         public Action<int, int, IInvokePayload> EntityInvalidTargetInvoked;
@@ -26,6 +28,7 @@ namespace EntityNetwork
         public ServerZone(IServerEntityFactory entityFactory)
         {
             _entityFactory = entityFactory;
+            _startTime = DateTime.UtcNow;
         }
 
         public IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags = EntityFlags.Normal,
@@ -99,6 +102,11 @@ namespace EntityNetwork
             return _entityMap.Values;
         }
 
+        public TimeSpan GetTime()
+        {
+            return DateTime.UtcNow - _startTime;
+        }
+
         private void OnEntityTrackableHasChangeSet(int entityId, int trackableDataIndex)
         {
             _changedEntitySet.Add(entityId);
@@ -163,15 +171,16 @@ namespace EntityNetwork
 
             _clientChannelMap.Add(clientId, channelToClientZone);
 
+            channelToClientZone.Begin();
+            channelToClientZone.Init(clientId, _startTime, DateTime.UtcNow - _startTime);
+
             foreach (var entity in _entityMap.Values)
             {
-                channelToClientZone.Begin();
-
                 var payload = entity.GetSpawnPayload();
                 channelToClientZone.Spawn(entity.Id, entity.ProtoTypeType, entity.OwnerId, entity.Flags, payload);
-
-                channelToClientZone.End();
             }
+
+            channelToClientZone.End();
             return true;
         }
 

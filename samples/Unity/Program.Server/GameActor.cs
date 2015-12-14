@@ -18,7 +18,7 @@ namespace Unity.Program.Server
     [Log]
     public class GameActor : InterfacedActor<GameActor>, IGame, IGameClient
     {
-        private class UserData : ByteChannel
+        private class UserData : IByteChannel
         {
             public UserRef UserActor;
             public GameObserver Observer;
@@ -26,7 +26,7 @@ namespace Unity.Program.Server
             public ProtobufChannelToClientZoneOutbound OutboundChannel;
             public ProtobufChannelToServerZoneInbound InboundChannel;
 
-            void ByteChannel.Write(byte[] bytes)
+            void IByteChannel.Write(byte[] bytes)
             {
                 Observer.ZoneChange(bytes);
             }

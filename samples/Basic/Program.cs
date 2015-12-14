@@ -10,7 +10,7 @@ using TypeAlias;
 
 namespace Basic
 {
-    class DummyChannelToServerZoneInbound : ByteChannel
+    class DummyChannelToServerZoneInbound : IByteChannel
     {
         public ProtobufChannelToServerZoneInbound Channel;
 

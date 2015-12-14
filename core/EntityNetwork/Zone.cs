@@ -15,11 +15,13 @@ namespace EntityNetwork
         bool Despawn(int id);
         IServerEntity GetEntity(int entityId);
         IEnumerable<IServerEntity> GetEntities();
+        TimeSpan GetTime();
     }
 
     public interface IClientZone : IZone
     {
         IClientEntity GetEntity(int entityId);
+        TimeSpan GetTime();
     }
 
     public interface IChannelToServerZone
@@ -30,6 +32,7 @@ namespace EntityNetwork
 
     public interface IChannelToClientZone
     {
+        void Init(int clientId, DateTime startTime, TimeSpan elapsedTime);
         void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload);
         void Despawn(int entityId);
         void Invoke(int entityId, IInvokePayload payload);

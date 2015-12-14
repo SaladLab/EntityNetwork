@@ -8,6 +8,9 @@ namespace EntityNetwork
         private readonly IClientEntityFactory _entityFactory;
         private readonly Dictionary<int, IClientEntity> _entityMap = new Dictionary<int, IClientEntity>();
         private readonly ProtobufChannelToServerZoneOutbound _serverChannel;
+        private int _clientId;
+        private DateTime _startTime;
+        private TimeSpan _timeOffset;
 
         public Action<IClientEntity> EntitySpawned;
         public Action<IClientEntity> EntityDespawned;
@@ -22,6 +25,18 @@ namespace EntityNetwork
         {
             IClientEntity entity;
             return _entityMap.TryGetValue(entityId, out entity) ? entity : null;
+        }
+
+        public TimeSpan GetTime()
+        {
+            return (DateTime.UtcNow - _startTime) + _timeOffset;
+        }
+
+        void IChannelToClientZone.Init(int clientId, DateTime startTime, TimeSpan elapsedTime)
+        {
+            _clientId = clientId;
+            _startTime = startTime;
+            _timeOffset = DateTime.UtcNow - (startTime + elapsedTime);
         }
 
         void IChannelToClientZone.Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags,

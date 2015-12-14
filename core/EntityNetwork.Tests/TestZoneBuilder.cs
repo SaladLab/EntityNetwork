@@ -8,7 +8,7 @@ using TypeAlias;
 
 namespace EntityNetwork.Tests
 {
-    internal class DummyChannelToServerZoneInbound : ByteChannel
+    internal class DummyChannelToServerZoneInbound : IByteChannel
     {
         public ProtobufChannelToServerZoneInbound Channel;
 

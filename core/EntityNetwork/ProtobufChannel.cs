@@ -6,7 +6,7 @@ using TypeAlias;
 
 namespace EntityNetwork
 {
-    public interface ByteChannel
+    public interface IByteChannel
     {
         void Write(byte[] bytes);
     }
@@ -16,7 +16,7 @@ namespace EntityNetwork
         public TypeAliasTable TypeTable;
         public TypeModel TypeModel;
 
-        public ByteChannel OutboundChannel;
+        public IByteChannel OutboundChannel;
 
         private MemoryStream _stream;
         private BinaryWriter _writer;
@@ -41,9 +41,17 @@ namespace EntityNetwork
             return bytes;
         }
 
-        public void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload)
+        public void Init(int clientId, DateTime startTime, TimeSpan elapsedTime)
         {
             _writer.Write((byte)1);
+            _writer.Write(clientId);
+            _writer.Write(startTime.Ticks);
+            _writer.Write(elapsedTime.Ticks);
+        }
+
+        public void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload)
+        {
+            _writer.Write((byte)2);
             _writer.Write(entityId);
             var typeAlias = TypeTable.GetAlias(protoTypeType);
             if (typeAlias == 0)
@@ -56,33 +64,33 @@ namespace EntityNetwork
 
         public void Despawn(int entityId)
         {
-            _writer.Write((byte)2);
+            _writer.Write((byte)3);
             _writer.Write(entityId);
         }
 
         public void Invoke(int entityId, IInvokePayload payload)
-        {
-            _writer.Write((byte)3);
-            _writer.Write(entityId);
-            ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
-        }
-
-        public void UpdateChange(int entityId, IUpdateChangePayload payload)
         {
             _writer.Write((byte)4);
             _writer.Write(entityId);
             ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
         }
 
-        public void OwnershipChange(int entityId, int ownerId)
+        public void UpdateChange(int entityId, IUpdateChangePayload payload)
         {
             _writer.Write((byte)5);
+            _writer.Write(entityId);
+            ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
+        }
+
+        public void OwnershipChange(int entityId, int ownerId)
+        {
+            _writer.Write((byte)6);
             _writer.Write(entityId);
             _writer.Write(ownerId);
         }
     }
 
-    public class ProtobufChannelToClientZoneInbound : ByteChannel
+    public class ProtobufChannelToClientZoneInbound : IByteChannel
     {
         public TypeAliasTable TypeTable;
         public TypeModel TypeModel;
@@ -106,6 +114,16 @@ namespace EntityNetwork
                     {
                         case 1:
                         {
+                            var clientId = reader.ReadInt32();
+                            var startTime = reader.ReadInt64();
+                            var elapsedTime = reader.ReadInt64();
+                            channelToClientZone.Init(clientId,
+                                                     new DateTime(startTime, DateTimeKind.Utc),
+                                                     new TimeSpan(elapsedTime));
+                            break;
+                        }
+                        case 2:
+                        {
                             var entityId = reader.ReadInt32();
                             var typeAlias = reader.ReadInt32();
                             var ownerId = reader.ReadInt32();
@@ -114,20 +132,20 @@ namespace EntityNetwork
                             channelToClientZone.Spawn(entityId, TypeTable.GetType(typeAlias), ownerId, flags, payload);
                             break;
                         }
-                        case 2:
+                        case 3:
                         {
                             var entityId = reader.ReadInt32();
                             channelToClientZone.Despawn(entityId);
                             break;
                         }
-                        case 3:
+                        case 4:
                         {
                             var entityId = reader.ReadInt32();
                             var payload = (IInvokePayload)ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
                             channelToClientZone.Invoke(entityId, payload);
                             break;
                         }
-                        case 4:
+                        case 5:
                         {
                             var entityId = reader.ReadInt32();
                             var payload =
@@ -135,7 +153,7 @@ namespace EntityNetwork
                             channelToClientZone.UpdateChange(entityId, payload);
                             break;
                         }
-                        case 5:
+                        case 6:
                         {
                             var entityId = reader.ReadInt32();
                             var ownerId = reader.ReadInt32();
@@ -155,7 +173,7 @@ namespace EntityNetwork
         public TypeAliasTable TypeTable;
         public TypeModel TypeModel;
 
-        public ByteChannel OutboundChannel;
+        public IByteChannel OutboundChannel;
 
         private MemoryStream _stream;
         private BinaryWriter _writer;
@@ -196,7 +214,7 @@ namespace EntityNetwork
         }
     }
 
-    public class ProtobufChannelToServerZoneInbound : ByteChannel
+    public class ProtobufChannelToServerZoneInbound : IByteChannel
     {
         public TypeAliasTable TypeTable;
         public TypeModel TypeModel;
