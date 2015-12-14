@@ -69,6 +69,7 @@
     <Compile Include="ClientZone.cs" />
     <Compile Include="EntityFactory.cs" />
     <Compile Include="Entity.cs" />
+    <Compile Include="Properties\AssemblyInfoGenerated.cs" />
     <Compile Include="ProtobufChannel.cs" />
     <Compile Include="ServerEntity.cs" />
     <Compile Include="Zone.cs" />

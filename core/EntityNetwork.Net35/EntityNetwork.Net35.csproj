@@ -87,6 +87,9 @@
     <Compile Include="..\EntityNetwork\Properties\AssemblyInfo.cs">
       <Link>Properties\AssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\EntityNetwork\Properties\AssemblyInfoGenerated.cs">
+      <Link>Properties\AssemblyInfoGenerated.cs</Link>
+    </Compile>
     <Compile Include="..\EntityNetwork\ProtobufChannel.cs">
       <Link>ProtobufChannel.cs</Link>
     </Compile>
