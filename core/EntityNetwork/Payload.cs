@@ -18,7 +18,8 @@ namespace EntityNetwork
     {
         PassThrough = 1,
         ToServer = 2,
-        ToClient = 4
+        ToClient = 4,
+        AnyoneCanCall = 8,
     }
 
     public interface IInvokePayload

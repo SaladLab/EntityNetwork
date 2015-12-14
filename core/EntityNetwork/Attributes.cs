@@ -13,4 +13,8 @@ namespace EntityNetwork
     public sealed class ToClientAttribute : Attribute
     {
     }
+
+    public sealed class AnyoneCanCallAttribute : Attribute
+    {
+    }
 }

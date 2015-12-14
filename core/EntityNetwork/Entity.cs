@@ -19,6 +19,7 @@ namespace EntityNetwork
     {
         Normal = 0,
         LiveWhenOwnerGoAway = 1,
-        ClientCanUpdateTrackableData = 2, // TODO: Implement
+        AnyoneCanControl = 2,
+        ClientCanUpdateTrackableData = 4, // TODO: Implement
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using TrackableData;
+﻿using TrackableData;
 
 namespace EntityNetwork
 {
@@ -32,7 +31,10 @@ namespace EntityNetwork
         public int OwnerId { get; set; }
         public EntityFlags Flags { get; set; }
 
-        public virtual object Snapshot { set { } }
+        public virtual object Snapshot
+        {
+            set { }
+        }
 
         public abstract int TrackableDataCount { get; }
         public abstract ITrackable GetTrackableData(int index);

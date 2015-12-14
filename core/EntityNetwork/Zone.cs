@@ -24,8 +24,8 @@ namespace EntityNetwork
 
     public interface IChannelToServerZone
     {
-        void Invoke(int entityId, IInvokePayload payload);
-        void UpdateChange(int entityId, int trackableDataIndex, ITracker tracker);
+        void Invoke(int clientId, int entityId, IInvokePayload payload);
+        void UpdateChange(int clientId, int entityId, int trackableDataIndex, ITracker tracker);
     }
 
     public interface IChannelToClientZone
@@ -34,5 +34,6 @@ namespace EntityNetwork
         void Despawn(int entityId);
         void Invoke(int entityId, IInvokePayload payload);
         void UpdateChange(int entityId, IUpdateChangePayload payload);
+        void OwnershipChange(int entityId, int ownerId);
     }
 }

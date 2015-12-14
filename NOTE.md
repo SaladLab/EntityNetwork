@@ -10,7 +10,7 @@
 
 - Time is an essential factor for game
 
-## Ownership
+## Ownership *Done*
 
 Every entity has ownership.
 - If owner leave the network, owned entity will be despawned.

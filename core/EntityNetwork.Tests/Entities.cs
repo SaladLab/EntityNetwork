@@ -10,6 +10,9 @@ namespace EntityNetwork.Tests
     public interface IBullet : IEntityPrototype
     {
         void Hit(int x, int y);
+
+        [ToServer, AnyoneCanCall]
+        void Tag(string tag);
     }
 
     public class ServerBullet : BulletServerBase, IBulletServerHandler
@@ -25,6 +28,11 @@ namespace EntityNetwork.Tests
         public void OnHit(int x = 0, int y = 0)
         {
             Log($"OnHit({x}, {y})");
+        }
+
+        public void OnTag(string tag)
+        {
+            Log($"OnTag({tag})");
         }
     }
 

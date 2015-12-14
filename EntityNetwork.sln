@@ -42,6 +42,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Domain", "samples\Uni
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityNetwork.Tests", "core\EntityNetwork.Tests\EntityNetwork.Tests.csproj", "{9128479E-BEB7-4984-8725-29D5A948ABFF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B9858319-EB58-49FE-A06C-FDE806890F9E} = {B9858319-EB58-49FE-A06C-FDE806890F9E}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -15,15 +15,21 @@ namespace EntityNetwork
         private int _beginActionCount;
         private readonly HashSet<int> _changedEntitySet = new HashSet<int>();
 
-        private readonly Dictionary<int, ProtobufChannelToClientZoneOutbound> _clientChannelMap = 
+        private readonly Dictionary<int, ProtobufChannelToClientZoneOutbound> _clientChannelMap =
             new Dictionary<int, ProtobufChannelToClientZoneOutbound>();
+
+        public Action<IServerEntity> EntitySpawned;
+        public Action<IServerEntity> EntityDespawned;
+        public Action<int, int, IInvokePayload> EntityInvalidTargetInvoked;
+        public Action<int, IServerEntity, IInvokePayload> EntityInvalidOwnershipInvoked;
 
         public ServerZone(IServerEntityFactory entityFactory)
         {
             _entityFactory = entityFactory;
         }
 
-        public IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags = EntityFlags.Normal, object param = null)
+        public IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags = EntityFlags.Normal,
+                                   object param = null)
         {
             var entityId = _lastEntityId += 1;
 
@@ -38,7 +44,7 @@ namespace EntityNetwork
 
             _entityMap.Add(entityId, entity);
             entity.OnSpawn(param);
-            OnSpawn(entity);
+            EntitySpawned?.Invoke(entity);
 
             // start tracking trackable-data changes
 
@@ -46,7 +52,7 @@ namespace EntityNetwork
             {
                 var iLocal = i;
                 entity.GetTrackableData(i).SetDefaultTracker();
-                entity.GetTrackableData(i).Tracker.HasChangeSet += 
+                entity.GetTrackableData(i).Tracker.HasChangeSet +=
                     _ => { OnEntityTrackableHasChangeSet(entityId, iLocal); };
             }
 
@@ -68,7 +74,7 @@ namespace EntityNetwork
             if (entity == null)
                 return false;
 
-            OnDespawn(entity);
+            EntityDespawned?.Invoke(entity);
             entity.OnDespawn();
 
             _entityMap.Remove(id);
@@ -104,27 +110,56 @@ namespace EntityNetwork
                 clientZone.Invoke(entityId, payload);
         }
 
-        void IChannelToServerZone.Invoke(int entityId, IInvokePayload payload)
+        void IChannelToServerZone.Invoke(int clientId, int entityId, IInvokePayload payload)
         {
             var serverEntity = GetEntity(entityId);
-            if (serverEntity != null)
+            if (serverEntity == null)
             {
-                if ((payload.Flags & PayloadFlags.PassThrough) != 0)
-                    ((IServerZone)this).Invoke(entityId, payload);
-                else
-                    payload.InvokeServer((IEntityServerHandler)serverEntity);
+                EntityInvalidTargetInvoked?.Invoke(clientId, entityId, payload);
+                return;
             }
+
+            // Check Ownership
+            if (((serverEntity.Flags & EntityFlags.AnyoneCanControl) == 0) && 
+                ((payload.Flags & PayloadFlags.AnyoneCanCall) == 0) &&
+                serverEntity.OwnerId != clientId)
+            {
+                EntityInvalidOwnershipInvoked?.Invoke(clientId, serverEntity, payload);
+                return;
+            }
+
+            if ((payload.Flags & PayloadFlags.PassThrough) != 0)
+                ((IServerZone)this).Invoke(entityId, payload);
+            else
+                payload.InvokeServer((IEntityServerHandler)serverEntity);
         }
 
-        void IChannelToServerZone.UpdateChange(int entityId, int trackableDataIndex, ITracker tracker)
+        void IChannelToServerZone.UpdateChange(int clientId, int entityId, int trackableDataIndex, ITracker tracker)
         {
             // TODO: NOT IMPLEMENTED
         }
 
         public bool AddClient(int clientId, ProtobufChannelToClientZoneOutbound channelToClientZone)
         {
+            if (clientId <= 0)
+                throw new ArgumentException("ClientId should be greater than zero");
+
             if (_clientChannelMap.ContainsKey(clientId))
                 return false;
+
+            // If there are orphan entities,
+            // make an incoming client own all orphan entities.
+
+            if (_clientChannelMap.Count == 0)
+            {
+                foreach (var entity in _entityMap.Values)
+                {
+                    if (entity.OwnerId == -1)
+                        entity.OwnerId = clientId;
+                }
+            }
+
+            // Sync all entities to an incoming client
 
             _clientChannelMap.Add(clientId, channelToClientZone);
 
@@ -147,6 +182,8 @@ namespace EntityNetwork
 
             _clientChannelMap.Remove(clientId);
 
+            BeginAction();
+
             // Remove all entity that owned by removed client
 
             var removingIds = _entityMap.Where(x => (x.Value.OwnerId == clientId) &&
@@ -155,13 +192,59 @@ namespace EntityNetwork
             foreach (var id in removingIds)
                 Despawn(id);
 
-            // TODO: Handover ownership to others
+            // Handover ownership to others
 
-            var handOverIds = _entityMap.Where(x => (x.Value.OwnerId == clientId) &&
-                                                    (x.Value.Flags & EntityFlags.LiveWhenOwnerGoAway) != 0)
-                                        .Select(x => x.Key).ToList();
+            var handOverEntities = _entityMap.Where(x => (x.Value.OwnerId == clientId) &&
+                                                         (x.Value.Flags & EntityFlags.LiveWhenOwnerGoAway) != 0)
+                                             .Select(x => x.Value).ToList();
+            if (handOverEntities.Count > 0)
+            {
+                if (_clientChannelMap.Count > 0)
+                {
+                    // If there are clients, give an ownership of entity left by round-robin fashion.
 
+                    var clients = _clientChannelMap.ToList();
+                    var clientIndex = 0;
+                    foreach (var entity in handOverEntities)
+                    {
+                        entity.OwnerId = clients[clientIndex].Key;
+                        clientIndex = (clientIndex + 1) % clients.Count;
+
+                        foreach (var clientChannel in _clientChannelMap.Values)
+                            clientChannel.OwnershipChange(entity.Id, entity.OwnerId);
+                    }
+                }
+                else
+                {
+                    // If there is no client, make them orphan.
+
+                    foreach (var entity in handOverEntities)
+                    {
+                        entity.OwnerId = -1;
+                    }
+                }
+            }
+
+            EndAction();
             return true;
+        }
+
+        public void SetEntityOwnership(int entityId, int ownerId)
+        {
+            var entity = GetEntity(entityId);
+            if (entity == null)
+                throw new ArgumentException("Invalid entity: " + entityId);
+
+            if (ownerId != 0 && _clientChannelMap.ContainsKey(ownerId) == false)
+                throw new ArgumentException("Invalid ownerId: " + ownerId);
+
+            if (entity.OwnerId == ownerId)
+                return;
+
+            entity.OwnerId = ownerId;
+
+            foreach (var clientChannel in _clientChannelMap.Values)
+                clientChannel.OwnershipChange(entity.Id, entity.OwnerId);
         }
 
         public void BeginAction()
@@ -211,14 +294,6 @@ namespace EntityNetwork
             BeginAction();
             action(this);
             EndAction();
-        }
-
-        protected virtual void OnSpawn(IServerEntity entity)
-        {
-        }
-
-        protected virtual void OnDespawn(IServerEntity entity)
-        {
         }
     }
 }

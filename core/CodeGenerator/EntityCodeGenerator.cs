@@ -120,6 +120,7 @@ namespace CodeGen
                 var hasPassThroughAttribute = method.AttributeLists.GetAttribute("PassThroughAttribute") != null;
                 var hasToClientAttribute = method.AttributeLists.GetAttribute("ToClientAttribute") != null;
                 var hasToServerAttribute = method.AttributeLists.GetAttribute("ToServerAttribute") != null;
+                var hasAnyoneCanCallAttribute = method.AttributeLists.GetAttribute("AnyoneCanCallAttribute") != null;
 
                 var flags = new List<String>();
                 if (hasPassThroughAttribute)
@@ -128,6 +129,8 @@ namespace CodeGen
                     flags.Add("PayloadFlags.ToServer");
                 if (hasToServerAttribute)
                     flags.Add("PayloadFlags.ToClient");
+                if (hasAnyoneCanCallAttribute)
+                    flags.Add("PayloadFlags.AnyoneCanCall");
                 if (flags.Count == 0)
                     flags.Add("0");
                 sb.Append($"\t\tpublic PayloadFlags Flags {{ get {{ return {string.Join(" | ", flags)}; }} }}\n");

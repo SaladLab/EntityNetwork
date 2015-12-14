@@ -52,6 +52,7 @@ namespace EntityNetwork.Tests
                     {
                         TypeTable = _typeTable,
                         TypeModel = _typeModel,
+                        ClientId = clientId,
                         InboundServerZone = ServerZone,
                     }
                 }

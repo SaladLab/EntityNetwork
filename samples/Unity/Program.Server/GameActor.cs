@@ -94,6 +94,7 @@ namespace Unity.Program.Server
             {
                 TypeTable = _typeTable.Value,
                 TypeModel = _typeModel.Value,
+                ClientId = clientId,
                 InboundServerZone = _zone
             };
 

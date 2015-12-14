@@ -44,6 +44,7 @@ namespace Basic
                         {
                             TypeTable = typeTable,
                             TypeModel = typeModel,
+                            ClientId = i + 1,
                             InboundServerZone = serverZone,
                         }
                     }
@@ -60,7 +61,7 @@ namespace Basic
                         InboundClientZone = clientZone,
                     }
                 };
-                serverZone.AddClient(i, channel);
+                serverZone.AddClient(i + 1, channel);
                 return clientZone;
             }).ToArray();
 

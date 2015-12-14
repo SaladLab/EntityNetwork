@@ -15,17 +15,24 @@ namespace EntityNetwork.Tests
         public TestServerZone(IServerEntityFactory entityFactory)
             : base(entityFactory)
         {
+            EntitySpawned = OnSpawn;
+            EntityDespawned = OnDespawn;
+            EntityInvalidOwnershipInvoked = OnInvalidOwnershipInvoke;
         }
 
-        protected override void OnSpawn(IServerEntity entity)
+        private void OnSpawn(IServerEntity entity)
         {
             Logs.Add(Tuple.Create(entity.Id, "Spawn"));
-
         }
 
-        protected override void OnDespawn(IServerEntity entity)
+        private void OnDespawn(IServerEntity entity)
         {
             Logs.Add(Tuple.Create(entity.Id, "Despawn"));
+        }
+
+        private void OnInvalidOwnershipInvoke(int clientId, IServerEntity entity, IInvokePayload payload)
+        {
+            Logs.Add(Tuple.Create(entity.Id, "InvalidOwnershipInvoke"));
         }
     }
 
@@ -41,14 +48,16 @@ namespace EntityNetwork.Tests
         public TestClientZone(IClientEntityFactory entityFactory, ProtobufChannelToServerZoneOutbound serverChannel)
             : base(entityFactory, serverChannel)
         {
+            EntitySpawned = OnSpawn;
+            EntityDespawned = OnDespawn;
         }
 
-        protected override void OnSpawn(IClientEntity entity)
+        private void OnSpawn(IClientEntity entity)
         {
             Logs.Add(Tuple.Create(entity.Id, "Spawn"));
         }
 
-        protected override void OnDespawn(IClientEntity entity)
+        private void OnDespawn(IClientEntity entity)
         {
             Logs.Add(Tuple.Create(entity.Id, "Despawn"));
         }

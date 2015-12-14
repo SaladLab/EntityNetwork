@@ -73,6 +73,13 @@ namespace EntityNetwork
             _writer.Write(entityId);
             ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
         }
+
+        public void OwnershipChange(int entityId, int ownerId)
+        {
+            _writer.Write((byte)5);
+            _writer.Write(entityId);
+            _writer.Write(ownerId);
+        }
     }
 
     public class ProtobufChannelToClientZoneInbound : ByteChannel
@@ -123,8 +130,16 @@ namespace EntityNetwork
                         case 4:
                         {
                             var entityId = reader.ReadInt32();
-                            var payload = (IUpdateChangePayload)ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
+                            var payload =
+                                (IUpdateChangePayload)ProtobufStreamHelper.ReadObject(reader, TypeTable, TypeModel);
                             channelToClientZone.UpdateChange(entityId, payload);
+                            break;
+                        }
+                        case 5:
+                        {
+                            var entityId = reader.ReadInt32();
+                            var ownerId = reader.ReadInt32();
+                            channelToClientZone.OwnershipChange(entityId, ownerId);
                             break;
                         }
                         default:
@@ -165,16 +180,16 @@ namespace EntityNetwork
             return bytes;
         }
 
-        public void Invoke(int entityId, IInvokePayload payload)
+        public void Invoke(int clientId, int entityId, IInvokePayload payload)
         {
-            _writer.Write((byte)3);
+            _writer.Write((byte)11);
             _writer.Write(entityId);
             ProtobufStreamHelper.WriteObject(_writer, payload, TypeTable, TypeModel);
         }
 
-        public void UpdateChange(int entityId, int trackableDataIndex, ITracker tracker)
+        public void UpdateChange(int clientId, int entityId, int trackableDataIndex, ITracker tracker)
         {
-            _writer.Write((byte)4);
+            _writer.Write((byte)12);
             _writer.Write(entityId);
             _writer.Write((byte)trackableDataIndex);
             ProtobufStreamHelper.WriteObject(_writer, tracker, TypeTable, TypeModel);
@@ -186,6 +201,7 @@ namespace EntityNetwork
         public TypeAliasTable TypeTable;
         public TypeModel TypeModel;
 
+        public int ClientId;
         public IChannelToServerZone InboundServerZone;
 
         public void Write(byte[] bytes)
@@ -203,23 +219,23 @@ namespace EntityNetwork
                     var code = reader.ReadByte();
                     switch (code)
                     {
-                        case 3:
-                            {
-                                var entityId = reader.ReadInt32();
-                                var invokePayload = (IInvokePayload)ProtobufStreamHelper.ReadObject(
-                                    reader, TypeTable, TypeModel);
-                                channelToServerZone.Invoke(entityId, invokePayload);
-                                break;
-                            }
-                        case 4:
-                            {
-                                var entityId = reader.ReadInt32();
-                                var trackableDataIndex = reader.ReadByte();
-                                var tracker = (ITracker)ProtobufStreamHelper.ReadObject(
-                                    reader, TypeTable, TypeModel);
-                                channelToServerZone.UpdateChange(entityId, trackableDataIndex, tracker);
-                                break;
-                            }
+                        case 11:
+                        {
+                            var entityId = reader.ReadInt32();
+                            var invokePayload = (IInvokePayload)ProtobufStreamHelper.ReadObject(
+                                reader, TypeTable, TypeModel);
+                            channelToServerZone.Invoke(ClientId, entityId, invokePayload);
+                            break;
+                        }
+                        case 12:
+                        {
+                            var entityId = reader.ReadInt32();
+                            var trackableDataIndex = reader.ReadByte();
+                            var tracker = (ITracker)ProtobufStreamHelper.ReadObject(
+                                reader, TypeTable, TypeModel);
+                            channelToServerZone.UpdateChange(ClientId, entityId, trackableDataIndex, tracker);
+                            break;
+                        }
                         default:
                             throw new Exception("Invalid code: " + code);
                     }

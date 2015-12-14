@@ -33,6 +33,7 @@ namespace EntityNetwork.Tests
             return new Type[]
             {
                 typeof(Hit_Invoke),
+                typeof(Tag_Invoke),
             };
         }
 
@@ -54,11 +55,29 @@ namespace EntityNetwork.Tests
                 ((IBulletClientHandler)target).OnHit(x, y);
             }
         }
+
+        [ProtoContract, TypeAlias]
+        public class Tag_Invoke : IInvokePayload
+        {
+            [ProtoMember(1)] public string tag;
+
+            public PayloadFlags Flags { get { return PayloadFlags.ToClient | PayloadFlags.AnyoneCanCall; } }
+
+            public void InvokeServer(IEntityServerHandler target)
+            {
+                ((IBulletServerHandler)target).OnTag(tag);
+            }
+
+            public void InvokeClient(IEntityClientHandler target)
+            {
+            }
+        }
     }
 
     public interface IBulletServerHandler : IEntityServerHandler
     {
         void OnHit(int x, int y);
+        void OnTag(string tag);
     }
 
     public abstract class BulletServerBase : EntityNetwork.Tests.TestServerEntity
@@ -102,6 +121,12 @@ namespace EntityNetwork.Tests
         public void Hit(int x, int y)
         {
             var payload = new IBullet_PayloadTable.Hit_Invoke { x = x, y = y };
+            SendInvoke(payload);
+        }
+
+        public void Tag(string tag)
+        {
+            var payload = new IBullet_PayloadTable.Tag_Invoke { tag = tag };
             SendInvoke(payload);
         }
     }

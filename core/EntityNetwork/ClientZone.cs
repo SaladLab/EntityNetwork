@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using TrackableData;
 
 namespace EntityNetwork
 {
@@ -9,6 +8,9 @@ namespace EntityNetwork
         private readonly IClientEntityFactory _entityFactory;
         private readonly Dictionary<int, IClientEntity> _entityMap = new Dictionary<int, IClientEntity>();
         private readonly ProtobufChannelToServerZoneOutbound _serverChannel;
+
+        public Action<IClientEntity> EntitySpawned;
+        public Action<IClientEntity> EntityDespawned;
 
         public ClientZone(IClientEntityFactory entityFactory, ProtobufChannelToServerZoneOutbound serverChannel)
         {
@@ -22,7 +24,8 @@ namespace EntityNetwork
             return _entityMap.TryGetValue(entityId, out entity) ? entity : null;
         }
 
-        void IChannelToClientZone.Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload)
+        void IChannelToClientZone.Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags,
+                                        ISpawnPayload payload)
         {
             var entity = _entityFactory.Create(protoTypeType);
 
@@ -37,25 +40,25 @@ namespace EntityNetwork
             _entityMap.Add(entityId, entity);
 
             entity.OnSpawn();
-            OnSpawn(entity);
+            EntitySpawned?.Invoke(entity);
         }
 
         void IChannelToClientZone.Despawn(int entityId)
         {
             var entity = GetEntity(entityId);
-            if (entity != null)
-            {
-                OnDespawn(entity);
-                entity.OnDespawn();
+            if (entity == null)
+                return;
 
-                _entityMap.Remove(entityId);
-                _entityFactory.Delete(entity);
-            }
+            EntityDespawned?.Invoke(entity);
+            entity.OnDespawn();
+
+            _entityMap.Remove(entityId);
+            _entityFactory.Delete(entity);
         }
 
         void IZone.Invoke(int entityId, IInvokePayload payload)
         {
-            _serverChannel.Invoke(entityId, payload);
+            _serverChannel.Invoke(0, entityId, payload);
         }
 
         void IChannelToClientZone.Invoke(int entityId, IInvokePayload payload)
@@ -72,6 +75,13 @@ namespace EntityNetwork
                 payload.Notify(entity);
         }
 
+        void IChannelToClientZone.OwnershipChange(int entityId, int ownerId)
+        {
+            var entity = GetEntity(entityId);
+            if (entity != null)
+                entity.OwnerId = ownerId;
+        }
+
         public void RunAction(Action<ClientZone> action)
         {
             _serverChannel.Begin();
@@ -79,14 +89,6 @@ namespace EntityNetwork
             action(this);
 
             _serverChannel.End();
-        }
-
-        protected virtual void OnSpawn(IClientEntity entity)
-        {
-        }
-
-        protected virtual void OnDespawn(IClientEntity entity)
-        {
         }
     }
 }
