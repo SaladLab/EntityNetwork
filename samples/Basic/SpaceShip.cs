@@ -5,9 +5,18 @@ namespace Basic
 {
     public class ServerSpaceShip : SpaceShipServerBase, ISpaceShipServerHandler
     {
+        private string _name;
+        private float _x;
+        private float _y;
+
+        public override void OnSpawn(object param)
+        {
+            _name = (string)param;
+        }
+
         public override SpaceShipSnapshot OnSnapshot()
         {
-            return new SpaceShipSnapshot { Name = "Houston" };
+            return new SpaceShipSnapshot { Name = _name };
         }
 
         public void OnSay(string msg)
@@ -22,7 +31,7 @@ namespace Basic
             Console.WriteLine($"SpaceShip({Id}).Shoot({x}, {y}, {dx}, {dy})");
 
             // TEST
-            var bullet = (ServerBullet)Zone.Spawn(typeof(IBullet), 0, EntityFlags.Normal);
+            var bullet = (ServerBullet)Zone.Spawn(typeof(IBullet), 0, EntityFlags.Normal, null);
             bullet.Hit(1, 1);
         }
     }

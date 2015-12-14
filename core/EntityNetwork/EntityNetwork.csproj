@@ -65,10 +65,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
+    <Compile Include="ClientEntity.cs" />
     <Compile Include="ClientZone.cs" />
     <Compile Include="EntityFactory.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="ProtobufChannel.cs" />
+    <Compile Include="ServerEntity.cs" />
     <Compile Include="Zone.cs" />
     <Compile Include="Payload.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

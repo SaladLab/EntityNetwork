@@ -4,6 +4,18 @@ using TypeAlias;
 
 namespace EntityNetwork
 {
+    public interface IServerEntityFactory
+    {
+        IServerEntity Create(Type protoTypeType);
+        void Delete(IServerEntity entity);
+    }
+
+    public interface IClientEntityFactory
+    {
+        IClientEntity Create(Type protoTypeType);
+        void Delete(IClientEntity entity);
+    }
+
     public class EntityFactory : IServerEntityFactory, IClientEntityFactory
     {
         private static EntityFactory _default;

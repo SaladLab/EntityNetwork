@@ -69,6 +69,9 @@
     <Compile Include="..\EntityNetwork\Attributes.cs">
       <Link>Attributes.cs</Link>
     </Compile>
+    <Compile Include="..\EntityNetwork\ClientEntity.cs">
+      <Link>ClientEntity.cs</Link>
+    </Compile>
     <Compile Include="..\EntityNetwork\ClientZone.cs">
       <Link>ClientZone.cs</Link>
     </Compile>
@@ -86,6 +89,9 @@
     </Compile>
     <Compile Include="..\EntityNetwork\ProtobufChannel.cs">
       <Link>ProtobufChannel.cs</Link>
+    </Compile>
+    <Compile Include="..\EntityNetwork\ServerEntity.cs">
+      <Link>ServerEntity.cs</Link>
     </Compile>
     <Compile Include="..\EntityNetwork\ServerZone.cs">
       <Link>ServerZone.cs</Link>

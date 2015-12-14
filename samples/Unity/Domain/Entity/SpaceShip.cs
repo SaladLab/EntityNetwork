@@ -21,7 +21,7 @@ namespace Domain.Entity
             Console.WriteLine($"SpaceShip({Id}).Shoot({x}, {y}, {dx}, {dy})");
 
             // TEST
-            var bullet = (ServerBullet)Zone.Spawn(typeof(IBullet), 0, EntityFlags.Normal);
+            var bullet = (ServerBullet)Zone.Spawn(typeof(IBullet), 0, EntityFlags.Normal, null);
             bullet.Hit(1, 1);
         }
     }

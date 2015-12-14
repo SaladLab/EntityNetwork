@@ -5,7 +5,6 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props" Condition="Exists('$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props')" />
   <PropertyGroup>
-    <EntityNetworkProtobuf>1</EntityNetworkProtobuf>
     <EntityNetworkClientEntityBaseClass>EntityNetwork.Unity3D.EntityNetworkBehaviour</EntityNetworkClientEntityBaseClass>
   </PropertyGroup>
   <PropertyGroup>

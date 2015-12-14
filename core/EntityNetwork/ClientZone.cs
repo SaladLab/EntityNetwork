@@ -37,6 +37,7 @@ namespace EntityNetwork
             _entityMap.Add(entityId, entity);
 
             entity.OnSpawn();
+            OnSpawn(entity);
         }
 
         void IChannelToClientZone.Despawn(int entityId)
@@ -44,6 +45,7 @@ namespace EntityNetwork
             var entity = GetEntity(entityId);
             if (entity != null)
             {
+                OnDespawn(entity);
                 entity.OnDespawn();
 
                 _entityMap.Remove(entityId);
@@ -77,6 +79,14 @@ namespace EntityNetwork
             action(this);
 
             _serverChannel.End();
+        }
+
+        protected virtual void OnSpawn(IClientEntity entity)
+        {
+        }
+
+        protected virtual void OnDespawn(IClientEntity entity)
+        {
         }
     }
 }

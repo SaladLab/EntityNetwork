@@ -11,7 +11,7 @@ namespace EntityNetwork
 
     public interface IServerZone : IZone
     {
-        IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags);
+        IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags, object param);
         bool Despawn(int id);
         IServerEntity GetEntity(int entityId);
         IEnumerable<IServerEntity> GetEntities();

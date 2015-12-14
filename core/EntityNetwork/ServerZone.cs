@@ -23,7 +23,7 @@ namespace EntityNetwork
             _entityFactory = entityFactory;
         }
 
-        public IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags)
+        public IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags = EntityFlags.Normal, object param = null)
         {
             var entityId = _lastEntityId += 1;
 
@@ -37,7 +37,8 @@ namespace EntityNetwork
             entity.Flags = flags;
 
             _entityMap.Add(entityId, entity);
-            entity.OnSpawn();
+            entity.OnSpawn(param);
+            OnSpawn(entity);
 
             // start tracking trackable-data changes
 
@@ -67,6 +68,7 @@ namespace EntityNetwork
             if (entity == null)
                 return false;
 
+            OnDespawn(entity);
             entity.OnDespawn();
 
             _entityMap.Remove(id);
@@ -209,6 +211,14 @@ namespace EntityNetwork
             BeginAction();
             action(this);
             EndAction();
+        }
+
+        protected virtual void OnSpawn(IServerEntity entity)
+        {
+        }
+
+        protected virtual void OnDespawn(IServerEntity entity)
+        {
         }
     }
 }

@@ -20,7 +20,7 @@ namespace CodeGen
         [Option('t', "target", HelpText = "Filename of a generated code.")]
         public string TargetFile { get; set; }
 
-        [Option('c', "protobuf", HelpText = "Use protobuf-net for serializing generated message type.")]
+        [Option('c', "protobuf", Default = true, HelpText = "Use protobuf-net for serializing generated message type.")]
         public bool UseProtobuf { get; set; }
 
         [Option("serverentity", HelpText = "Name of server entity base class")]

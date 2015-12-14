@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{D8752E27-F16E-4E84-95D8-588E7482278E}"
 EndProject
@@ -41,7 +41,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Domain", "samples\Uni
 		{B9858319-EB58-49FE-A06C-FDE806890F9E} = {B9858319-EB58-49FE-A06C-FDE806890F9E}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityNetwork.Tests", "core\EntityNetwork.Tests\EntityNetwork.Tests.csproj", "{2E3DF5C2-8A38-4A03-86D7-8D463C917E47}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityNetwork.Tests", "core\EntityNetwork.Tests\EntityNetwork.Tests.csproj", "{9128479E-BEB7-4984-8725-29D5A948ABFF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,10 +81,10 @@ Global
 		{8BC6E409-057F-44C5-A968-16B614C8FBA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BC6E409-057F-44C5-A968-16B614C8FBA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BC6E409-057F-44C5-A968-16B614C8FBA6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2E3DF5C2-8A38-4A03-86D7-8D463C917E47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2E3DF5C2-8A38-4A03-86D7-8D463C917E47}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2E3DF5C2-8A38-4A03-86D7-8D463C917E47}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2E3DF5C2-8A38-4A03-86D7-8D463C917E47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9128479E-BEB7-4984-8725-29D5A948ABFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9128479E-BEB7-4984-8725-29D5A948ABFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9128479E-BEB7-4984-8725-29D5A948ABFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9128479E-BEB7-4984-8725-29D5A948ABFF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -98,6 +98,6 @@ Global
 		{DB45AC5E-CC05-4626-AE49-0BFB479D7C11} = {00CD4068-96DB-4C68-9144-28BAA905D89E}
 		{2A07B47B-4E18-4330-BD07-1A0E8EC53B1E} = {00CD4068-96DB-4C68-9144-28BAA905D89E}
 		{8BC6E409-057F-44C5-A968-16B614C8FBA6} = {00CD4068-96DB-4C68-9144-28BAA905D89E}
-		{2E3DF5C2-8A38-4A03-86D7-8D463C917E47} = {D8752E27-F16E-4E84-95D8-588E7482278E}
+		{9128479E-BEB7-4984-8725-29D5A948ABFF} = {D8752E27-F16E-4E84-95D8-588E7482278E}
 	EndGlobalSection
 EndGlobal
