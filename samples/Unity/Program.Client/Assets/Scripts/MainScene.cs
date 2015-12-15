@@ -11,7 +11,7 @@ using EntityNetwork;
 using TrackableData;
 using TypeAlias;
 
-public class MainScene : MonoBehaviour, IGameObserver, ByteChannel
+public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
 {
     private ClientZone _zone;
     private ProtobufChannelToClientZoneInbound _zoneChannel;
@@ -137,7 +137,7 @@ public class MainScene : MonoBehaviour, IGameObserver, ByteChannel
         _zoneChannel.Write(bytes);
     }
 
-    void ByteChannel.Write(byte[] bytes)
+    void IByteChannel.Write(byte[] bytes)
     {
         _gameClient.ZoneChange(null, bytes);
     }

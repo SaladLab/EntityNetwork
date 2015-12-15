@@ -1,11 +1,6 @@
-﻿using System;
-using System.IO;
-using EntityNetwork;
-using ProtoBuf.Meta;
-using TypeAlias;
-using UnityEngine.Networking;
+﻿using EntityNetwork;
 
-public class EntityNetworkChannelToServerZone : ByteChannel
+public class EntityNetworkChannelToServerZone : IByteChannel
 {
     public EntityNetworkClient NetworkClient;
 
@@ -15,7 +10,7 @@ public class EntityNetworkChannelToServerZone : ByteChannel
     }
 }
 
-public class EntityNetworkChannelToClientZone : ByteChannel
+public class EntityNetworkChannelToClientZone : IByteChannel
 {
     public EntityNetworkClient NetworkClient;
 
