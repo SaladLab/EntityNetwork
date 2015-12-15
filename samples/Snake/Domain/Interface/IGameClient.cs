@@ -4,10 +4,9 @@ using Akka.Interfaced;
 
 namespace Domain
 {
-    // Any user who is in a game
-    [TagOverridable("senderUserId")]
+    [TagOverridable("clientId")]
     public interface IGameClient : IInterfacedActor
     {
-        Task ZoneChange(string senderUserId, byte[] bytes);
+        Task ZoneMessage(byte[] bytes, int clientId = 0);
     }
 }

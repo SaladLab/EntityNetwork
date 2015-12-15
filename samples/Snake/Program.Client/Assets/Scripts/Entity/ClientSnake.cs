@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using Domain.Entity;
-using Domain.Game;
+using Domain;
 using EntityNetwork;
 
 public class ClientSnake : SnakeClientBase, ISnakeClientHandler

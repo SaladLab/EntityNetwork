@@ -23,7 +23,7 @@ using System.ComponentModel;
 
 #region IFruit
 
-namespace Domain.Entity
+namespace Domain
 {
     [PayloadTableForEntity(typeof(IFruit))]
     public static class IFruit_PayloadTable
@@ -110,7 +110,7 @@ namespace Domain.Entity
 
 #region ISnake
 
-namespace Domain.Entity
+namespace Domain
 {
     [PayloadTableForEntity(typeof(ISnake))]
     public static class ISnake_PayloadTable

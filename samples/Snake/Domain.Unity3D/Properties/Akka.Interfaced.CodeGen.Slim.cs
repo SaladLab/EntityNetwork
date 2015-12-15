@@ -25,19 +25,19 @@ namespace Domain
         {
             return new Type[,]
             {
-                {typeof(ZoneChange_Invoke), null},
+                {typeof(ZoneMessage_Invoke), null},
             };
         }
 
         [ProtoContract, TypeAlias]
-        public class ZoneChange_Invoke : IInterfacedPayload, ITagOverridable, IAsyncInvokable
+        public class ZoneMessage_Invoke : IInterfacedPayload, ITagOverridable, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.String senderUserId;
-            [ProtoMember(2)] public System.Byte[] bytes;
+            [ProtoMember(1)] public System.Byte[] bytes;
+            [ProtoMember(2)] public System.Int32 clientId;
 
             public Type GetInterfaceType() { return typeof(IGameClient); }
 
-            public void SetTag(object value) { senderUserId = (System.String)value; }
+            public void SetTag(object value) { clientId = (System.Int32)value; }
 
             public Task<IValueGetable> InvokeAsync(object target)
             {
@@ -48,7 +48,7 @@ namespace Domain
 
     public interface IGameClient_NoReply
     {
-        void ZoneChange(System.String senderUserId, System.Byte[] bytes);
+        void ZoneMessage(System.Byte[] bytes, System.Int32 clientId = 0);
     }
 
     public class GameClientRef : InterfacedActorRef, IGameClient, IGameClient_NoReply
@@ -73,20 +73,20 @@ namespace Domain
             return new GameClientRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task ZoneChange(System.String senderUserId, System.Byte[] bytes)
+        public Task ZoneMessage(System.Byte[] bytes, System.Int32 clientId = 0)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { senderUserId = senderUserId, bytes = bytes }
+                InvokePayload = new IGameClient_PayloadTable.ZoneMessage_Invoke { bytes = bytes, clientId = clientId }
             };
             return SendRequestAndWait(requestMessage);
         }
 
-        void IGameClient_NoReply.ZoneChange(System.String senderUserId, System.Byte[] bytes)
+        void IGameClient_NoReply.ZoneMessage(System.Byte[] bytes, System.Int32 clientId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IGameClient_PayloadTable.ZoneChange_Invoke { senderUserId = senderUserId, bytes = bytes }
+                InvokePayload = new IGameClient_PayloadTable.ZoneMessage_Invoke { bytes = bytes, clientId = clientId }
             };
             SendRequest(requestMessage);
         }
@@ -106,16 +106,17 @@ namespace Domain
         {
             return new Type[,]
             {
-                {typeof(EnterGame_Invoke), typeof(EnterGame_Return)},
-                {typeof(GetId_Invoke), typeof(GetId_Return)},
+                {typeof(JoinGame_Invoke), typeof(JoinGame_Return)},
                 {typeof(LeaveGame_Invoke), null},
+                {typeof(RegisterPairing_Invoke), null},
+                {typeof(UnregisterPairing_Invoke), null},
             };
         }
 
         [ProtoContract, TypeAlias]
-        public class EnterGame_Invoke : IInterfacedPayload, IAsyncInvokable
+        public class JoinGame_Invoke : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.String name;
+            [ProtoMember(1)] public System.Int64 gameId;
             [ProtoMember(2)] public System.Int32 observerId;
 
             public Type GetInterfaceType() { return typeof(IUser); }
@@ -127,7 +128,7 @@ namespace Domain
         }
 
         [ProtoContract, TypeAlias]
-        public class EnterGame_Return : IInterfacedPayload, IValueGetable
+        public class JoinGame_Return : IInterfacedPayload, IValueGetable
         {
             [ProtoMember(1)] public System.Tuple<System.Int32, System.Int32, Domain.GameInfo> v;
 
@@ -137,8 +138,10 @@ namespace Domain
         }
 
         [ProtoContract, TypeAlias]
-        public class GetId_Invoke : IInterfacedPayload, IAsyncInvokable
+        public class LeaveGame_Invoke : IInterfacedPayload, IAsyncInvokable
         {
+            [ProtoMember(1)] public System.Int64 gameId;
+
             public Type GetInterfaceType() { return typeof(IUser); }
 
             public Task<IValueGetable> InvokeAsync(object target)
@@ -148,17 +151,20 @@ namespace Domain
         }
 
         [ProtoContract, TypeAlias]
-        public class GetId_Return : IInterfacedPayload, IValueGetable
+        public class RegisterPairing_Invoke : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.String v;
+            [ProtoMember(1)] public System.Int32 observerId;
 
             public Type GetInterfaceType() { return typeof(IUser); }
 
-            public object Value { get { return v; } }
+            public Task<IValueGetable> InvokeAsync(object target)
+            {
+                return null;
+            }
         }
 
         [ProtoContract, TypeAlias]
-        public class LeaveGame_Invoke : IInterfacedPayload, IAsyncInvokable
+        public class UnregisterPairing_Invoke : IInterfacedPayload, IAsyncInvokable
         {
             public Type GetInterfaceType() { return typeof(IUser); }
 
@@ -171,9 +177,10 @@ namespace Domain
 
     public interface IUser_NoReply
     {
-        void EnterGame(System.String name, System.Int32 observerId);
-        void GetId();
-        void LeaveGame();
+        void JoinGame(System.Int64 gameId, System.Int32 observerId);
+        void LeaveGame(System.Int64 gameId);
+        void RegisterPairing(System.Int32 observerId);
+        void UnregisterPairing();
     }
 
     public class UserRef : InterfacedActorRef, IUser, IUser_NoReply
@@ -198,56 +205,164 @@ namespace Domain
             return new UserRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task<System.Tuple<System.Int32, System.Int32, Domain.GameInfo>> EnterGame(System.String name, System.Int32 observerId)
+        public Task<System.Tuple<System.Int32, System.Int32, Domain.GameInfo>> JoinGame(System.Int64 gameId, System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observerId = observerId }
+                InvokePayload = new IUser_PayloadTable.JoinGame_Invoke { gameId = gameId, observerId = observerId }
             };
             return SendRequestAndReceive<System.Tuple<System.Int32, System.Int32, Domain.GameInfo>>(requestMessage);
         }
 
-        public Task<System.String> GetId()
+        public Task LeaveGame(System.Int64 gameId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IUser_PayloadTable.GetId_Invoke {  }
-            };
-            return SendRequestAndReceive<System.String>(requestMessage);
-        }
-
-        public Task LeaveGame()
-        {
-            var requestMessage = new RequestMessage
-            {
-                InvokePayload = new IUser_PayloadTable.LeaveGame_Invoke {  }
+                InvokePayload = new IUser_PayloadTable.LeaveGame_Invoke { gameId = gameId }
             };
             return SendRequestAndWait(requestMessage);
         }
 
-        void IUser_NoReply.EnterGame(System.String name, System.Int32 observerId)
+        public Task RegisterPairing(System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observerId = observerId }
+                InvokePayload = new IUser_PayloadTable.RegisterPairing_Invoke { observerId = observerId }
+            };
+            return SendRequestAndWait(requestMessage);
+        }
+
+        public Task UnregisterPairing()
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IUser_PayloadTable.UnregisterPairing_Invoke {  }
+            };
+            return SendRequestAndWait(requestMessage);
+        }
+
+        void IUser_NoReply.JoinGame(System.Int64 gameId, System.Int32 observerId)
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IUser_PayloadTable.JoinGame_Invoke { gameId = gameId, observerId = observerId }
             };
             SendRequest(requestMessage);
         }
 
-        void IUser_NoReply.GetId()
+        void IUser_NoReply.LeaveGame(System.Int64 gameId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IUser_PayloadTable.GetId_Invoke {  }
+                InvokePayload = new IUser_PayloadTable.LeaveGame_Invoke { gameId = gameId }
             };
             SendRequest(requestMessage);
         }
 
-        void IUser_NoReply.LeaveGame()
+        void IUser_NoReply.RegisterPairing(System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IUser_PayloadTable.LeaveGame_Invoke {  }
+                InvokePayload = new IUser_PayloadTable.RegisterPairing_Invoke { observerId = observerId }
+            };
+            SendRequest(requestMessage);
+        }
+
+        void IUser_NoReply.UnregisterPairing()
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IUser_PayloadTable.UnregisterPairing_Invoke {  }
+            };
+            SendRequest(requestMessage);
+        }
+    }
+}
+
+#endregion
+
+#region Domain.IUserLogin
+
+namespace Domain
+{
+    [PayloadTableForInterfacedActor(typeof(IUserLogin))]
+    public static class IUserLogin_PayloadTable
+    {
+        public static Type[,] GetPayloadTypes()
+        {
+            return new Type[,]
+            {
+                {typeof(Login_Invoke), typeof(Login_Return)},
+            };
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Login_Invoke : IInterfacedPayload, IAsyncInvokable
+        {
+            [ProtoMember(1)] public System.String id;
+            [ProtoMember(2)] public System.String password;
+            [ProtoMember(3)] public System.Int32 observerId;
+
+            public Type GetInterfaceType() { return typeof(IUserLogin); }
+
+            public Task<IValueGetable> InvokeAsync(object target)
+            {
+                return null;
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Login_Return : IInterfacedPayload, IValueGetable
+        {
+            [ProtoMember(1)] public Domain.LoginResult v;
+
+            public Type GetInterfaceType() { return typeof(IUserLogin); }
+
+            public object Value { get { return v; } }
+        }
+    }
+
+    public interface IUserLogin_NoReply
+    {
+        void Login(System.String id, System.String password, System.Int32 observerId);
+    }
+
+    public class UserLoginRef : InterfacedActorRef, IUserLogin, IUserLogin_NoReply
+    {
+        public UserLoginRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout)
+            : base(actor, requestWaiter, timeout)
+        {
+        }
+
+        public IUserLogin_NoReply WithNoReply()
+        {
+            return this;
+        }
+
+        public UserLoginRef WithRequestWaiter(IRequestWaiter requestWaiter)
+        {
+            return new UserLoginRef(Actor, requestWaiter, Timeout);
+        }
+
+        public UserLoginRef WithTimeout(TimeSpan? timeout)
+        {
+            return new UserLoginRef(Actor, RequestWaiter, timeout);
+        }
+
+        public Task<Domain.LoginResult> Login(System.String id, System.String password, System.Int32 observerId)
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { id = id, password = password, observerId = observerId }
+            };
+            return SendRequestAndReceive<Domain.LoginResult>(requestMessage);
+        }
+
+        void IUserLogin_NoReply.Login(System.String id, System.String password, System.Int32 observerId)
+        {
+            var requestMessage = new RequestMessage
+            {
+                InvokePayload = new IUserLogin_PayloadTable.Login_Invoke { id = id, password = password, observerId = observerId }
             };
             SendRequest(requestMessage);
         }
@@ -263,20 +378,22 @@ namespace Domain
     public static class IGameObserver_PayloadTable
     {
         [ProtoContract, TypeAlias]
-        public class Enter_Invoke : IInvokable
+        public class Join_Invoke : IInvokable
         {
-            [ProtoMember(1)] public System.String userId;
+            [ProtoMember(1)] public System.Int64 userId;
+            [ProtoMember(2)] public System.String userName;
+            [ProtoMember(3)] public System.Int32 clientId;
 
             public void Invoke(object target)
             {
-                ((IGameObserver)target).Enter(userId);
+                ((IGameObserver)target).Join(userId, userName, clientId);
             }
         }
 
         [ProtoContract, TypeAlias]
         public class Leave_Invoke : IInvokable
         {
-            [ProtoMember(1)] public System.String userId;
+            [ProtoMember(1)] public System.Int64 userId;
 
             public void Invoke(object target)
             {
@@ -285,13 +402,56 @@ namespace Domain
         }
 
         [ProtoContract, TypeAlias]
-        public class ZoneChange_Invoke : IInvokable
+        public class ZoneMessage_Invoke : IInvokable
         {
             [ProtoMember(1)] public System.Byte[] bytes;
 
             public void Invoke(object target)
             {
-                ((IGameObserver)target).ZoneChange(bytes);
+                ((IGameObserver)target).ZoneMessage(bytes);
+            }
+        }
+    }
+}
+
+#endregion
+
+#region Domain.IUserEventObserver
+
+namespace Domain
+{
+    public static class IUserEventObserver_PayloadTable
+    {
+        [ProtoContract, TypeAlias]
+        public class UserContextChange_Invoke : IInvokable
+        {
+            [ProtoMember(1)] public Domain.TrackableUserContextTracker userContextTracker;
+
+            public void Invoke(object target)
+            {
+                ((IUserEventObserver)target).UserContextChange(userContextTracker);
+            }
+        }
+    }
+}
+
+#endregion
+
+#region Domain.IUserPairingObserver
+
+namespace Domain
+{
+    public static class IUserPairingObserver_PayloadTable
+    {
+        [ProtoContract, TypeAlias]
+        public class MakePair_Invoke : IInvokable
+        {
+            [ProtoMember(1)] public System.Int64 gameId;
+            [ProtoMember(2)] public System.String opponentName;
+
+            public void Invoke(object target)
+            {
+                ((IUserPairingObserver)target).MakePair(gameId, opponentName);
             }
         }
     }

@@ -10,7 +10,7 @@
     <ProjectGuid>{23B5570B-8126-46CF-B3DD-5E1F86F5BE38}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Snake.Domain</RootNamespace>
+    <RootNamespace>Domain</RootNamespace>
     <AssemblyName>Snake.Domain</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -86,16 +86,23 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Entity\IFruit.cs" />
-    <Compile Include="Entity\ISnake.cs" />
-    <Compile Include="Entity\Rule.cs" />
-    <Compile Include="Entity\ServerFruit.cs" />
-    <Compile Include="Entity\ServerSnake.cs" />
-    <Compile Include="Interface\GameInfo.cs" />
+    <Compile Include="Data\IUserContext.cs" />
+    <Compile Include="Data\IUserData.cs" />
+    <Compile Include="Game\IFruit.cs" />
+    <Compile Include="Game\ISnake.cs" />
+    <Compile Include="Game\Rule.cs" />
+    <Compile Include="Game\ServerFruit.cs" />
+    <Compile Include="Game\ServerSnake.cs" />
+    <Compile Include="Interface\GameTypes.cs" />
     <Compile Include="Interface\IGame.cs" />
     <Compile Include="Interface\IGameClient.cs" />
     <Compile Include="Interface\IGameObserver.cs" />
+    <Compile Include="Interface\IGamePairMaker.cs" />
     <Compile Include="Interface\IUser.cs" />
+    <Compile Include="Interface\IUserEventObserver.cs" />
+    <Compile Include="Interface\IUserLogin.cs" />
+    <Compile Include="Interface\IUserPairingObserver.cs" />
+    <Compile Include="Interface\ResultException.cs" />
     <Compile Include="Properties\Akka.Interfaced.CodeGen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\EntityNetwork.CodeGen.cs" />

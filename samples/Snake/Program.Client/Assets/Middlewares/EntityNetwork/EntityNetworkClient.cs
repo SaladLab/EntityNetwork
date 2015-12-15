@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Domain.Entity;
+using Domain;
 using EntityNetwork;
 using UnityEngine;
 using UnityEngine.Networking;

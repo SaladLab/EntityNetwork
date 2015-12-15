@@ -13,7 +13,7 @@
     <ProjectGuid>{D0579CBD-5D96-4972-923C-3E6C8060049A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Snake.Domain.Unity3D</RootNamespace>
+    <RootNamespace>Domain</RootNamespace>
     <AssemblyName>Snake.Domain.Unity3D</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -86,23 +86,29 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Domain\Entity\IFruit.cs">
-      <Link>Entity\IFruit.cs</Link>
+    <Compile Include="..\Domain\Data\IUserContext.cs">
+      <Link>Data\IUserContext.cs</Link>
     </Compile>
-    <Compile Include="..\Domain\Entity\ISnake.cs">
-      <Link>Entity\ISnake.cs</Link>
+    <Compile Include="..\Domain\Data\IUserData.cs">
+      <Link>Data\IUserData.cs</Link>
     </Compile>
-    <Compile Include="..\Domain\Entity\Rule.cs">
-      <Link>Entity\Rule.cs</Link>
+    <Compile Include="..\Domain\Game\IFruit.cs">
+      <Link>Game\IFruit.cs</Link>
     </Compile>
-    <Compile Include="..\Domain\Entity\ServerFruit.cs">
-      <Link>Entity\ServerFruit.cs</Link>
+    <Compile Include="..\Domain\Game\ISnake.cs">
+      <Link>Game\ISnake.cs</Link>
     </Compile>
-    <Compile Include="..\Domain\Entity\ServerSnake.cs">
-      <Link>Entity\ServerSnake.cs</Link>
+    <Compile Include="..\Domain\Game\Rule.cs">
+      <Link>Game\Rule.cs</Link>
     </Compile>
-    <Compile Include="..\Domain\Interface\GameInfo.cs">
-      <Link>Interface\GameInfo.cs</Link>
+    <Compile Include="..\Domain\Game\ServerFruit.cs">
+      <Link>Game\ServerFruit.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Game\ServerSnake.cs">
+      <Link>Game\ServerSnake.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\GameTypes.cs">
+      <Link>Interface\GameTypes.cs</Link>
     </Compile>
     <Compile Include="..\Domain\Interface\IGameClient.cs">
       <Link>Interface\IGameClient.cs</Link>
@@ -112,6 +118,18 @@
     </Compile>
     <Compile Include="..\Domain\Interface\IUser.cs">
       <Link>Interface\IUser.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IUserEventObserver.cs">
+      <Link>Interface\IUserEventObserver.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IUserLogin.cs">
+      <Link>Interface\IUserLogin.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\IUserPairingObserver.cs">
+      <Link>Interface\IUserPairingObserver.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Interface\ResultException.cs">
+      <Link>Interface\ResultException.cs</Link>
     </Compile>
     <Compile Include="Properties\Akka.Interfaced.CodeGen.Slim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

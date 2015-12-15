@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Linq;
-using Domain.Game;
 using EntityNetwork;
 
-namespace Domain.Entity
+namespace Domain
 {
     public class ServerFruit : FruitServerBase, IFruitServerHandler
     {

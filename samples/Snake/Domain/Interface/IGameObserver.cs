@@ -5,8 +5,8 @@ namespace Domain
 {
     public interface IGameObserver : IInterfacedObserver
     {
-        void Enter(string userId);
-        void Leave(string userId);
-        void ZoneChange(byte[] bytes);
+        void Join(long userId, string userName, int clientId);
+        void Leave(long userId);
+        void ZoneMessage(byte[] bytes);
     }
 }
