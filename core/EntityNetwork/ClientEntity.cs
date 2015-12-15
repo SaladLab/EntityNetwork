@@ -1,4 +1,5 @@
-﻿using TrackableData;
+﻿using System;
+using TrackableData;
 
 namespace EntityNetwork
 {
@@ -7,6 +8,7 @@ namespace EntityNetwork
     public interface IClientEntity
     {
         int Id { get; set; }
+        Type ProtoTypeType { get; set; }
         IClientZone Zone { get; set; }
         int OwnerId { get; set; }
         EntityFlags Flags { get; set; }
@@ -27,6 +29,7 @@ namespace EntityNetwork
     public abstract class ClientEntity : IClientEntity
     {
         public int Id { get; set; }
+        public Type ProtoTypeType { get; set; }
         public IClientZone Zone { get; set; }
         public int OwnerId { get; set; }
         public EntityFlags Flags { get; set; }

@@ -1,9 +1,9 @@
-﻿using System.Collections;
-using System.IO;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Domain.Entity;
 using EntityNetwork;
-using ProtoBuf.Meta;
-using TypeAlias;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -88,6 +88,21 @@ public class EntityNetworkClient : NetworkBehaviour
     public void CmdAddClientToZoneDone()
     {
         Debug.LogFormat("CmdAddClientToZoneDone({0})", _clientId);
+
+        // TODO: Decouple this
+
+        EntityNetworkManager.Instance.Zone.RunAction(zone =>
+        {
+            zone.Spawn(typeof(ISnake), _clientId, EntityFlags.Normal,
+                       new SnakeSnapshot
+                       {
+                           Parts = new List<Tuple<int, int>> { Tuple.Create(0, 0), Tuple.Create(1, 0) }
+                       });
+
+            // Zone Controller?
+            if (zone.GetEntities(typeof(IFruit)).Any() == false)
+                ServerFruit.Spawn(zone);
+        });
     }
 
     // Zone Channel
@@ -95,7 +110,7 @@ public class EntityNetworkClient : NetworkBehaviour
     [Command]
     public void CmdBuffer(byte[] bytes)
     {
-        EntityNetworkManager.Instance.ZoneChannel.Write(bytes);
+        EntityNetworkManager.Instance.WriteZoneChannel(ClientId, bytes);
     }
 
     [ClientRpc]

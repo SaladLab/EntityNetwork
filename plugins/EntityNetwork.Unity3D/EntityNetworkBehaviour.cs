@@ -1,4 +1,5 @@
-﻿using TrackableData;
+﻿using System;
+using TrackableData;
 using UnityEngine;
 
 namespace EntityNetwork.Unity3D
@@ -6,6 +7,7 @@ namespace EntityNetwork.Unity3D
     public abstract class EntityNetworkBehaviour : MonoBehaviour, IClientEntity
     {
         public int Id { get; set; }
+        public Type ProtoTypeType { get; set; }
         public IClientZone Zone { get; set; }
         public int OwnerId { get; set; }
         public EntityFlags Flags { get; set; }

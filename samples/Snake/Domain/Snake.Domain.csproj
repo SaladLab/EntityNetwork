@@ -88,6 +88,7 @@
   <ItemGroup>
     <Compile Include="Entity\IFruit.cs" />
     <Compile Include="Entity\ISnake.cs" />
+    <Compile Include="Entity\Rule.cs" />
     <Compile Include="Entity\ServerFruit.cs" />
     <Compile Include="Entity\ServerSnake.cs" />
     <Compile Include="Interface\GameInfo.cs" />

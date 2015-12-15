@@ -15,12 +15,16 @@ namespace EntityNetwork
         bool Despawn(int id);
         IServerEntity GetEntity(int entityId);
         IEnumerable<IServerEntity> GetEntities();
+        IEnumerable<IServerEntity> GetEntities(Type protoTypeType);
         TimeSpan GetTime();
     }
 
     public interface IClientZone : IZone
     {
+        int ClientId { get; }
         IClientEntity GetEntity(int entityId);
+        IEnumerable<IClientEntity> GetEntities();
+        IEnumerable<IClientEntity> GetEntities(Type protoTypeType);
         TimeSpan GetTime();
     }
 

@@ -102,6 +102,11 @@ namespace EntityNetwork
             return _entityMap.Values;
         }
 
+        public IEnumerable<IServerEntity> GetEntities(Type protoTypeType)
+        {
+            return _entityMap.Values.Where(e => e.ProtoTypeType == protoTypeType);
+        }
+
         public TimeSpan GetTime()
         {
             return DateTime.UtcNow - _startTime;
@@ -259,6 +264,8 @@ namespace EntityNetwork
         public void BeginAction()
         {
             _beginActionCount += 1;
+            if (_beginActionCount > 1)
+                return;
 
             foreach (var channel in _clientChannelMap.Values)
                 channel.Begin();

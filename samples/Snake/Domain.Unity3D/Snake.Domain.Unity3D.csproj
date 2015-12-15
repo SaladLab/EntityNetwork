@@ -92,6 +92,9 @@
     <Compile Include="..\Domain\Entity\ISnake.cs">
       <Link>Entity\ISnake.cs</Link>
     </Compile>
+    <Compile Include="..\Domain\Entity\Rule.cs">
+      <Link>Entity\Rule.cs</Link>
+    </Compile>
     <Compile Include="..\Domain\Entity\ServerFruit.cs">
       <Link>Entity\ServerFruit.cs</Link>
     </Compile>

@@ -1,4 +1,6 @@
-﻿using EntityNetwork;
+﻿using System;
+using System.Collections.Generic;
+using EntityNetwork;
 using ProtoBuf.Meta;
 using TypeAlias;
 using UnityEngine;
@@ -12,10 +14,9 @@ public class EntityNetworkManager : NetworkManager
     public static TypeModel ProtobufTypeModel;
 
     private ServerZone _zone;
-    private ProtobufChannelToServerZoneInbound _zoneChannel;
+    private Dictionary<int, ProtobufChannelToServerZoneInbound> _zoneChannelMap;
 
     public ServerZone Zone { get { return _zone; } }
-    public ProtobufChannelToServerZoneInbound ZoneChannel { get { return _zoneChannel; } }
 
     void Awake()
     {
@@ -25,29 +26,43 @@ public class EntityNetworkManager : NetworkManager
     public override void OnStartServer()
     {
         Debug.Log("EntityNetworkManager.OnStartServer");
+
         _zone = new ServerZone(EntityFactory.Default);
-        _zoneChannel = new ProtobufChannelToServerZoneInbound
-        {
-            TypeTable = TypeTable,
-            TypeModel = ProtobufTypeModel,
-            InboundServerZone = _zone
-        };
+        _zone.EntitySpawned = OnEntitySpawn;
+        _zone.EntityDespawned = OnEntityDespawn;
+        _zone.EntityInvalidTargetInvoked = OnEntityInvalidTargetInvoke;
+        _zone.EntityInvalidOwnershipInvoked = OnEntityInvalidOwnershipInvoke;
+
+        _zoneChannelMap = new Dictionary<int, ProtobufChannelToServerZoneInbound>();
     }
 
     public override void OnStopServer()
     {
         Debug.Log("EntityNetworkManager.OnStopServer");
         _zone = null;
-        _zoneChannel = null;
+        _zoneChannelMap = null;
     }
 
     public bool AddClientToZone(int clientId, EntityNetworkClient networkClient)
     {
-        var channel = new ProtobufChannelToClientZoneOutbound();
-        channel.OutboundChannel = new EntityNetworkChannelToClientZone {NetworkClient = networkClient};
-        channel.TypeTable = TypeTable;
-        channel.TypeModel = ProtobufTypeModel;
-        return _zone.AddClient(clientId, channel);
+        var channelDown = new ProtobufChannelToClientZoneOutbound()
+        {
+            OutboundChannel = new EntityNetworkChannelToClientZone {NetworkClient = networkClient},
+            TypeTable = TypeTable,
+            TypeModel = ProtobufTypeModel,
+        };
+        if (_zone.AddClient(clientId, channelDown) == false)
+            return false;
+
+        var channelUp = new ProtobufChannelToServerZoneInbound
+        {
+            TypeTable = TypeTable,
+            TypeModel = ProtobufTypeModel,
+            ClientId = clientId,
+            InboundServerZone = _zone
+        };
+        _zoneChannelMap.Add(clientId, channelUp);
+        return true;
     }
 
     public void RemoveClientToZone(int id)
@@ -56,5 +71,37 @@ public class EntityNetworkManager : NetworkManager
             return;
 
         _zone.RemoveClient(id);
+        _zoneChannelMap.Remove(id);
+    }
+
+    public void WriteZoneChannel(int clientId, byte[] bytes)
+    {
+        ProtobufChannelToServerZoneInbound channel;
+        if (_zoneChannelMap.TryGetValue(clientId, out channel))
+        {
+            _zone.BeginAction();
+            channel.Write(bytes);
+            _zone.EndAction();
+        }
+    }
+
+    private void OnEntitySpawn(IServerEntity entity)
+    {
+        Debug.LogFormat("OnEntitySpawn({0})", entity.Id);
+    }
+
+    private void OnEntityDespawn(IServerEntity entity)
+    {
+        Debug.LogFormat("OnEntityDespawn({0})", entity.Id);
+    }
+
+    private void OnEntityInvalidTargetInvoke(int clientId, int entityId, IInvokePayload payload)
+    {
+        Debug.LogWarningFormat("OnEntityInvalidTargetInvoke({0}, {1}, {2})", clientId, entityId, payload.GetType().Name);
+    }
+
+    private void OnEntityInvalidOwnershipInvoke(int clientId, IServerEntity entity, IInvokePayload payload)
+    {
+        Debug.LogWarningFormat("OnEntityInvalidOwnershipInvoke({0}, {1}, {2}, {3})", clientId, entity.Id, entity.OwnerId, payload.GetType().Name);
     }
 }

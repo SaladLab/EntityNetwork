@@ -1,5 +1,10 @@
 # TODO
 
+## Game Controller
+
+- Because there is no game controller now,
+  it's tricky to decide where to place the controller.
+
 ## TrackableData Extensibility
 
 - Current implementation supports only TrackablePoco.

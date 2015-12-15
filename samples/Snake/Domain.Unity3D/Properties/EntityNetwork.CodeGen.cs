@@ -7,12 +7,12 @@
 // </auto-generated>
 // ------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
 using EntityNetwork;
 using ProtoBuf;
 using TrackableData;
 using TypeAlias;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
@@ -34,6 +34,24 @@ namespace Domain.Entity
             {
             };
         }
+
+        [ProtoContract, TypeAlias]
+        public class Spawn : ISpawnPayload
+        {
+            [ProtoMember(1)] public FruitSnapshot Snapshot;
+
+            public void Gather(IServerEntity entity)
+            {
+                var e = (FruitServerBase)entity;
+                Snapshot = e.OnSnapshot();
+            }
+
+            public void Notify(IClientEntity entity)
+            {
+                var e = (FruitClientBase)entity;
+                e.OnSnapshot(Snapshot);
+            }
+        }
     }
 
     public interface IFruitServerHandler : IEntityServerHandler
@@ -42,6 +60,10 @@ namespace Domain.Entity
 
     public abstract class FruitServerBase : ServerEntity
     {
+        public override object Snapshot { get { return OnSnapshot(); } }
+
+        public abstract FruitSnapshot OnSnapshot();
+
         public override int TrackableDataCount { get { return 0; } }
 
         public override ITrackable GetTrackableData(int index)
@@ -52,6 +74,13 @@ namespace Domain.Entity
         public override void SetTrackableData(int index, ITrackable trackable)
         {
         }
+
+        public override ISpawnPayload GetSpawnPayload()
+        {
+            var payload = new IFruit_PayloadTable.Spawn();
+            payload.Gather(this);
+            return payload;
+        }
     }
 
     public interface IFruitClientHandler : IEntityClientHandler
@@ -60,6 +89,10 @@ namespace Domain.Entity
 
     public abstract class FruitClientBase : EntityNetwork.Unity3D.EntityNetworkBehaviour
     {
+        public override object Snapshot { set { OnSnapshot((FruitSnapshot)value); } }
+
+        public abstract void OnSnapshot(FruitSnapshot snapshot);
+
         public override int TrackableDataCount { get { return 0; } }
 
         public override ITrackable GetTrackableData(int index)
@@ -86,43 +119,212 @@ namespace Domain.Entity
         {
             return new Type[]
             {
+                typeof(DebugGrowUp_Invoke),
+                typeof(GrowUp_Invoke),
+                typeof(Move_Invoke),
             };
+        }
+
+        [ProtoContract, TypeAlias]
+        public class DebugGrowUp_Invoke : IInvokePayload
+        {
+            [ProtoMember(1)] public int length;
+
+            public PayloadFlags Flags { get { return PayloadFlags.ToClient; } }
+
+            public void InvokeServer(IEntityServerHandler target)
+            {
+                ((ISnakeServerHandler)target).OnDebugGrowUp(length);
+            }
+
+            public void InvokeClient(IEntityClientHandler target)
+            {
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class GrowUp_Invoke : IInvokePayload
+        {
+            [ProtoMember(1)] public int length;
+
+            public PayloadFlags Flags { get { return PayloadFlags.ToServer; } }
+
+            public void InvokeServer(IEntityServerHandler target)
+            {
+            }
+
+            public void InvokeClient(IEntityClientHandler target)
+            {
+                ((ISnakeClientHandler)target).OnGrowUp(length);
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Move_Invoke : IInvokePayload
+        {
+            [ProtoMember(1)] public int x;
+            [ProtoMember(2)] public int y;
+
+            public PayloadFlags Flags { get { return 0; } }
+
+            public void InvokeServer(IEntityServerHandler target)
+            {
+                ((ISnakeServerHandler)target).OnMove(x, y);
+            }
+
+            public void InvokeClient(IEntityClientHandler target)
+            {
+                ((ISnakeClientHandler)target).OnMove(x, y);
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Spawn : ISpawnPayload
+        {
+            [ProtoMember(1)] public TrackableSnakeData Data;
+            [ProtoMember(2)] public SnakeSnapshot Snapshot;
+
+            public void Gather(IServerEntity entity)
+            {
+                var e = (SnakeServerBase)entity;
+                Data = e.Data;
+                Snapshot = e.OnSnapshot();
+            }
+
+            public void Notify(IClientEntity entity)
+            {
+                var e = (SnakeClientBase)entity;
+                e.Data = Data;
+                e.OnSnapshot(Snapshot);
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class UpdateChange : IUpdateChangePayload
+        {
+            [ProtoMember(1)] public TrackablePocoTracker<ISnakeData> DataTracker;
+
+            public void Gather(IServerEntity entity)
+            {
+                var e = (SnakeServerBase)entity;
+                if (e.Data.Changed)
+                    DataTracker = (TrackablePocoTracker<ISnakeData>)e.Data.Tracker;
+            }
+
+            public void Notify(IClientEntity entity)
+            {
+                var e = (SnakeClientBase)entity;
+                if (DataTracker != null)
+                {
+                    e.OnTrackableDataChanging(0, DataTracker);
+                    DataTracker.ApplyTo(e.Data);
+                    e.OnTrackableDataChanged(0, DataTracker);
+                }
+            }
         }
     }
 
     public interface ISnakeServerHandler : IEntityServerHandler
     {
+        void OnDebugGrowUp(int length);
+        void OnMove(int x, int y);
     }
 
     public abstract class SnakeServerBase : ServerEntity
     {
-        public override int TrackableDataCount { get { return 0; } }
+        public TrackableSnakeData Data { get; set; }
+
+        protected SnakeServerBase()
+        {
+            Data = new TrackableSnakeData();
+        }
+
+        public override object Snapshot { get { return OnSnapshot(); } }
+
+        public abstract SnakeSnapshot OnSnapshot();
+
+        public override int TrackableDataCount { get { return 1; } }
 
         public override ITrackable GetTrackableData(int index)
         {
+            if (index == 0) return Data;
             return null;
         }
 
         public override void SetTrackableData(int index, ITrackable trackable)
         {
+            if (index == 0) Data = (TrackableSnakeData)trackable;
+        }
+
+        public override ISpawnPayload GetSpawnPayload()
+        {
+            var payload = new ISnake_PayloadTable.Spawn();
+            payload.Gather(this);
+            return payload;
+        }
+
+        public override IUpdateChangePayload GetUpdateChangePayload()
+        {
+            var payload = new ISnake_PayloadTable.UpdateChange();
+            payload.Gather(this);
+            return payload;
+        }
+
+        public void GrowUp(int length)
+        {
+            var payload = new ISnake_PayloadTable.GrowUp_Invoke { length = length };
+            SendInvoke(payload);
+        }
+
+        public void Move(int x, int y)
+        {
+            var payload = new ISnake_PayloadTable.Move_Invoke { x = x, y = y };
+            SendInvoke(payload);
         }
     }
 
     public interface ISnakeClientHandler : IEntityClientHandler
     {
+        void OnGrowUp(int length);
+        void OnMove(int x, int y);
     }
 
     public abstract class SnakeClientBase : EntityNetwork.Unity3D.EntityNetworkBehaviour
     {
-        public override int TrackableDataCount { get { return 0; } }
+        public TrackableSnakeData Data { get; set; }
+
+        protected SnakeClientBase()
+        {
+            Data = new TrackableSnakeData();
+        }
+
+        public override object Snapshot { set { OnSnapshot((SnakeSnapshot)value); } }
+
+        public abstract void OnSnapshot(SnakeSnapshot snapshot);
+
+        public override int TrackableDataCount { get { return 1; } }
 
         public override ITrackable GetTrackableData(int index)
         {
+            if (index == 0) return Data;
             return null;
         }
 
         public override void SetTrackableData(int index, ITrackable trackable)
         {
+            if (index == 0) Data = (TrackableSnakeData)trackable;
+        }
+
+        public void DebugGrowUp(int length)
+        {
+            var payload = new ISnake_PayloadTable.DebugGrowUp_Invoke { length = length };
+            SendInvoke(payload);
+        }
+
+        public void Move(int x, int y)
+        {
+            var payload = new ISnake_PayloadTable.Move_Invoke { x = x, y = y };
+            SendInvoke(payload);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EntityNetwork
 {
@@ -11,6 +12,8 @@ namespace EntityNetwork
         private int _clientId;
         private DateTime _startTime;
         private TimeSpan _timeOffset;
+
+        public int ClientId => _clientId;
 
         public Action<IClientEntity> EntitySpawned;
         public Action<IClientEntity> EntityDespawned;
@@ -25,6 +28,16 @@ namespace EntityNetwork
         {
             IClientEntity entity;
             return _entityMap.TryGetValue(entityId, out entity) ? entity : null;
+        }
+
+        public IEnumerable<IClientEntity> GetEntities()
+        {
+            return _entityMap.Values;
+        }
+
+        public IEnumerable<IClientEntity> GetEntities(Type protoTypeType)
+        {
+            return _entityMap.Values.Where(e => e.ProtoTypeType == protoTypeType);
         }
 
         public TimeSpan GetTime()
@@ -45,6 +58,7 @@ namespace EntityNetwork
             var entity = _entityFactory.Create(protoTypeType);
 
             entity.Id = entityId;
+            entity.ProtoTypeType = protoTypeType;
             entity.Zone = this;
             entity.OwnerId = ownerId;
             entity.Flags = flags;

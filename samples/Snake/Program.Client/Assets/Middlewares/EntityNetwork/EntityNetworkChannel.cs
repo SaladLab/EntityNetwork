@@ -18,6 +18,9 @@ public class EntityNetworkChannelToClientZone : IByteChannel
 
     public void Write(byte[] bytes)
     {
+        if (bytes == null)
+            return;
+
         NetworkClient.RpcBuffer(bytes);
     }
 }

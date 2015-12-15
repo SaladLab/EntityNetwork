@@ -23,6 +23,8 @@ namespace EntityNetwork
 
         public void Begin()
         {
+            // TODO: Lazy Init
+
             _stream = new MemoryStream();
             _writer = new BinaryWriter(_stream);
         }
@@ -35,7 +37,7 @@ namespace EntityNetwork
             _writer = null;
             _stream = null;
 
-            if (OutboundChannel != null)
+            if (OutboundChannel != null && bytes.Length > 0)
                 OutboundChannel.Write(bytes);
 
             return bytes;
@@ -180,6 +182,8 @@ namespace EntityNetwork
 
         public void Begin()
         {
+            // TODO: Lazy Init
+
             _stream = new MemoryStream();
             _writer = new BinaryWriter(_stream);
         }
@@ -192,7 +196,7 @@ namespace EntityNetwork
             _writer = null;
             _stream = null;
 
-            if (OutboundChannel != null)
+            if (OutboundChannel != null && bytes.Length > 0)
                 OutboundChannel.Write(bytes);
 
             return bytes;
