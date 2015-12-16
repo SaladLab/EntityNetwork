@@ -1,8 +1,7 @@
-﻿using System.IO;
-using System.Linq;
-using System.Net;
-using Common.Logging;
+﻿using System.Net;
 using Akka.Interfaced.SlimSocket.Client;
+using Common.Logging;
+using Domain;
 
 public static class G
 {
@@ -21,8 +20,27 @@ public static class G
         set
         {
             _comm = value;
+            if (_comm != null)
+            {
+                _comm.ObserverEventPoster = c => ApplicationComponent.Post(c, null);
+                _slimRequestWaiter = new SlimRequestWaiter(_comm, ApplicationComponent.Instance);
+            }
+            else
+            {
+                _slimRequestWaiter = null;
+            }
         }
     }
+
+    private static SlimRequestWaiter _slimRequestWaiter;
+
+    public static SlimRequestWaiter SlimRequestWaiter
+    {
+        get { return _slimRequestWaiter; }
+    }
+
+    public static readonly IPEndPoint ServerEndPoint =
+        new IPEndPoint(IPAddress.Loopback, 9001); // new IPEndPoint(IPAddress.Parse("192.168.100.8"), 9001);
 
     // Logger
 
@@ -32,4 +50,12 @@ public static class G
     {
         get { return _logger; }
     }
+
+    // User specific data
+
+    public static UserRef User { get; set; }
+
+    public static long UserId { get; set; }
+
+    public static TrackableUserContext UserContext { get; set; }
 }

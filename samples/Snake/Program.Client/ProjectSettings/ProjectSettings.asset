@@ -5,13 +5,13 @@ PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 7
   AndroidProfiler: 0
-  defaultScreenOrientation: 4
+  defaultScreenOrientation: 0
   targetDevice: 2
   targetResolution: 0
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
-  productName: Program.Client
+  companyName: Saladbowl Creative
+  productName: Snake
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_ShowUnitySplashScreen: 1
@@ -85,7 +85,7 @@ PlayerSettings:
     16:10: 1
     16:9: 1
     Others: 1
-  bundleIdentifier: com.Company.ProductName
+  bundleIdentifier: com.saladbowl.snake
   bundleVersion: 1.0
   preloadedAssets: []
   metroEnableIndependentInputSource: 0
@@ -94,7 +94,7 @@ PlayerSettings:
   virtualRealitySupported: 0
   productGUID: d873d6f88d1c3a84d97aa07111edbe87
   AndroidBundleVersionCode: 1
-  AndroidMinSdkVersion: 9
+  AndroidMinSdkVersion: 14
   AndroidPreferredInstallLocation: 1
   aotOptions: 
   apiCompatibilityLevel: 2
@@ -325,7 +325,7 @@ PlayerSettings:
   metroPackageLogo140: 
   metroPackageLogo180: 
   metroPackageLogo240: 
-  metroPackageVersion: 
+  metroPackageVersion: 1.0.0.0
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
@@ -381,7 +381,22 @@ PlayerSettings:
   metroTileBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
   metroSplashScreenBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
   metroSplashScreenUseBackgroundColor: 0
-  platformCapabilities: {}
+  platformCapabilities:
+    WindowsStoreApps:
+      EnterpriseAuthentication: False
+      HumanInterfaceDevice: False
+      InternetClient: False
+      InternetClientServer: False
+      Location: False
+      Microphone: False
+      MusicLibrary: False
+      PicturesLibrary: False
+      PrivateNetworkClientServer: False
+      Proximity: False
+      RemovableStorage: False
+      SharedUserCertificates: False
+      VideosLibrary: False
+      WebCam: False
   metroFTAName: 
   metroFTAFileTypes: []
   metroProtocolName: 
@@ -457,7 +472,7 @@ PlayerSettings:
   - iOS::Architecture
   - iOS::EnableIncrementalBuildSupportForIl2cpp
   - iOS::ScriptingBackend
-  Android::ScriptingBackend: 0
+  Android::ScriptingBackend: 1
   Metro::ScriptingBackend: 2
   Standalone::ScriptingBackend: 0
   WP8::ScriptingBackend: 2

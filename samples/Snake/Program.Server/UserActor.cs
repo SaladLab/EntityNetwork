@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Cluster.Utility;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
 using Common.Logging;
