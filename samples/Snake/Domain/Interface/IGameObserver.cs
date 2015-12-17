@@ -8,5 +8,8 @@ namespace Domain
         void Join(long userId, string userName, int clientId);
         void Leave(long userId);
         void ZoneMessage(byte[] bytes);
+        void Begin();
+        void End();
+        void Abort();
     }
 }

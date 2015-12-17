@@ -43,5 +43,6 @@ namespace Domain
     public class SnakeSnapshot
     {
         [ProtoMember(1)] public List<Tuple<int, int>> Parts;
+        [ProtoMember(2)] public bool UseAi;
     }
 }

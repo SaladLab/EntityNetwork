@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Akka.Actor;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
+using Akka.Interfaced.ProtobufSerializer;
 using Common.Logging;
 using Domain;
+using EntityNetwork;
+using ProtoBuf.Meta;
+using TypeAlias;
 
 namespace GameServer
 {
@@ -15,21 +20,32 @@ namespace GameServer
         private ClusterNodeContext _clusterContext;
         private long _id;
         private GameState _state;
+        private CreateGameParam _param;
 
-        private class Player
+        private class Client : IByteChannel
         {
             public long UserId;
             public string UserName;
             public GameObserver Observer;
+            public ProtobufChannelToClientZoneOutbound OutboundChannel;
+            public ProtobufChannelToServerZoneInbound InboundChannel;
+
+            void IByteChannel.Write(byte[] bytes)
+            {
+                Observer.ZoneMessage(bytes);
+            }
         }
 
-        private List<Player> _players = new List<Player>();
+        private List<Client> _clients = new List<Client>();
+        private ServerZone _zone;
 
         public GameActor(ClusterNodeContext clusterContext, long id, CreateGameParam param)
         {
             _logger = LogManager.GetLogger($"GameActor({id})");
             _clusterContext = clusterContext;
             _id = id;
+            _param = param;
+            _zone = new ServerZone(EntityFactory.Default);
         }
 
         private GameInfo GetGameInfo()
@@ -37,63 +53,160 @@ namespace GameServer
             return new GameInfo
             {
                 Id = _id,
+                WithBot = _param.WithBot,
                 State = _state,
-                PlayerNames = _players.Select(p => p.UserName).ToList(),
+                PlayerNames = _clients.Select(p => p.UserName).ToList(),
             };
         }
 
         private void NotifyToAllObservers(Action<int, GameObserver> notifyAction)
         {
-            for (var i = 0; i < _players.Count; i++)
+            for (var i = 0; i < _clients.Count; i++)
             {
-                if (_players[i].Observer != null)
-                    notifyAction(i + 1, _players[i].Observer);
+                if (_clients[i].Observer != null)
+                    notifyAction(i + 1, _clients[i].Observer);
             }
         }
 
+        private static Lazy<TypeAliasTable> _typeTable = new Lazy<TypeAliasTable>(() =>
+        {
+            var typeTable = new TypeAliasTable();
+            return typeTable;
+        });
+
+        private static Lazy<TypeModel> _typeModel = new Lazy<TypeModel>(() =>
+        {
+            var typeModel = TypeModel.Create();
+            AutoSurrogate.Register(typeModel);
+            return typeModel;
+        });
+
         [ExtendedHandler]
-        private Tuple<int, GameInfo> Join(long userId, string userName, int playerCount, IGameObserver observer)
+        private Tuple<int, GameInfo> Join(long userId, string userName, IGameObserver observer)
         {
             if (_state != GameState.WaitingForPlayers)
                 throw new ResultException(ResultCodeType.GameStarted);
 
-            if (_players.Count > 2)
+            if (_clients.Count > 2)
                 throw new ResultException(ResultCodeType.GamePlayerFull);
 
-            // TODO:
+            var clientId = _clients.Count + 1;
+            NotifyToAllObservers((id, o) => o.Join(userId, userName, clientId));
 
-            return Tuple.Create(1, GetGameInfo());
+            var client = new Client
+            {
+                UserId = userId,
+                UserName = userName,
+                Observer = (GameObserver)observer,
+            };
+
+            client.OutboundChannel = new ProtobufChannelToClientZoneOutbound
+            {
+                TypeTable = _typeTable.Value,
+                TypeModel = _typeModel.Value,
+                OutboundChannel = client
+            };
+
+            client.InboundChannel = new ProtobufChannelToServerZoneInbound
+            {
+                TypeTable = _typeTable.Value,
+                TypeModel = _typeModel.Value,
+                ClientId = clientId,
+                InboundServerZone = _zone
+            };
+
+            _clients.Add(client);
+            _zone.AddClient(clientId, client.OutboundChannel);
+
+            if ((_param.WithBot && _clients.Count == 1) || _clients.Count == 2)
+                RunTask(() => BeginGame());
+
+            return Tuple.Create(clientId, GetGameInfo());
+        }
+
+        private void BeginGame()
+        {
+            if (_state != GameState.WaitingForPlayers)
+                return;
+
+            _state = GameState.Playing;
+
+            _zone.RunAction(zone =>
+            {
+                var x1 = Rule.BoardWidth / 2;
+                var x2 = Rule.BoardWidth / 2 + 1;
+                var y1 = Rule.BoardHeight / 4;
+                var y2 = Rule.BoardHeight * 3 / 4;
+
+                zone.Spawn(typeof(ISnake), 1, EntityFlags.Normal,
+                           new SnakeSnapshot
+                           {
+                               Parts = new List<Tuple<int, int>>
+                               {
+                                   Tuple.Create(x1, y1),
+                                   Tuple.Create(x2, y1)
+                               }
+                           });
+
+                zone.Spawn(typeof(ISnake), _clients.Count, EntityFlags.Normal,
+                           new SnakeSnapshot
+                           {
+                               Parts = new List<Tuple<int, int>>
+                               {
+                                   Tuple.Create(x2, y2),
+                                   Tuple.Create(x1, y2)
+                               },
+                               UseAi = _clients.Count == 1,
+                           });
+            });
+
+            NotifyToAllObservers((id, o) => o.Begin());
+
+            // TODO: How to know game over
+        }
+
+        private int GetClientId(long userId)
+        {
+            var index = _clients.FindIndex(p => p.UserId == userId);
+            if (index == -1)
+                throw new ResultException(ResultCodeType.NeedToBeInGame);
+            return index + 1;
         }
 
         [ExtendedHandler]
         private void Leave(long userId)
         {
-            /*
-            var playerId = GetPlayerId(userId);
+            var clientId = GetClientId(userId);
 
-            var player = _players[playerId - 1];
-            _players[playerId - 1].Observer = null;
+            var client = _clients[clientId - 1];
+            _clients[clientId - 1].Observer = null;
 
-            NotifyToAllObservers((id, o) => o.Leave(playerId));
+            NotifyToAllObservers((id, o) => o.Leave(client.UserId));
 
             if (_state != GameState.Ended)
             {
                 // TODO: STATE
                 _state = GameState.Aborted;
                 NotifyToAllObservers((id, o) => o.Abort());
-                NotifyToAllObserversForUserActor((id, o) => o.End(_id, GameResult.None));
             }
 
-            if (_players.Count(p => p.Observer != null) == 0)
+            if (_clients.Count(p => p.Observer != null) == 0)
             {
                 Self.Tell(InterfacedPoisonPill.Instance);
             }
-            */
         }
 
         [ExtendedHandler]
         private void ZoneMessage(byte[] bytes, int clientId = 0)
         {
+            if (clientId < 1 || clientId > _clients.Count)
+                throw new InvalidOperationException();
+
+            var client = _clients[clientId - 1];
+            _zone.RunAction(_ =>
+            {
+                client.InboundChannel.Write(bytes);
+            });
         }
     }
 }

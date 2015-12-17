@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Cluster.Utility;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
 using Common.Logging;
@@ -46,10 +47,10 @@ namespace GameServer
             Context.Stop(Self);
         }
 
-        Task IUser.RegisterPairing(int observerId)
+        Task IUser.RegisterPairing(GameDifficulty difficulty, int observerId)
         {
             var observer = new UserPairingObserver(_clientSession, observerId);
-            return _clusterContext.GamePairMaker.RegisterPairing(_id, _userContext.Data.Name, observer);
+            return _clusterContext.GamePairMaker.RegisterPairing(_id, _userContext.Data.Name, difficulty, observer);
         }
 
         Task IUser.UnregisterPairing()
@@ -57,14 +58,64 @@ namespace GameServer
             return _clusterContext.GamePairMaker.UnregisterPairing(_id);
         }
 
-        Task<Tuple<int, int, GameInfo>> IUser.JoinGame(long gameId, int observerId)
+        async Task<Tuple<int, int, GameInfo>> IUser.JoinGame(long gameId, int observerId)
         {
-            throw new NotImplementedException();
+            if (_joinedGameMap.ContainsKey(gameId))
+                throw new ResultException(ResultCodeType.NeedToBeOutOfGame);
+
+            // Try to get game ref
+
+            var reply = await _clusterContext.GameTable.Ask<DistributedActorTableMessage<long>.GetOrCreateReply>(
+                new DistributedActorTableMessage<long>.GetOrCreate(gameId, null));
+            if (reply.Actor == null)
+                throw new ResultException(ResultCodeType.GameNotFound);
+
+            var game = new GameRef(reply.Actor, this, null);
+
+            // Let's enter the game !
+
+            var observer = new GameObserver(_clientSession, observerId);
+
+            var joinRet = await game.Join(_id, _userContext.Data.Name, observer);
+
+            // Bind an player actor with client session
+
+            var reply2 = await _clientSession.Ask<ActorBoundSessionMessage.BindReply>(
+                new ActorBoundSessionMessage.Bind(game.Actor, typeof(IGameClient), joinRet.Item1));
+
+            _joinedGameMap[gameId] = game;
+            return Tuple.Create(reply2.ActorId, joinRet.Item1, joinRet.Item2);
         }
 
-        Task IUser.LeaveGame(long gameId)
+        async Task IUser.LeaveGame(long gameId)
         {
-            throw new NotImplementedException();
+            GameRef game;
+            if (_joinedGameMap.TryGetValue(gameId, out game) == false)
+                throw new ResultException(ResultCodeType.NeedToBeInGame);
+
+            // Let's exit from the game !
+
+            await game.Leave(_id);
+
+            // TODO: Remove observer when leave
+
+            // Unbind an player actor with client session
+
+            _clientSession.Tell(new ActorBoundSessionMessage.Unbind(game.Actor));
+            _joinedGameMap.Remove(gameId);
+        }
+
+        private void FlushUserContext()
+        {
+            // Notify changes to Client
+            _userEventObserver.UserContextChange(_userContext.Tracker);
+
+            // Notify change to MongoDB
+            MongoDbStorage.UserContextMapper.SaveAsync(MongoDbStorage.Instance.UserCollection,
+                                                       _userContext.Tracker, _id);
+
+            // Clear changes
+            _userContext.Tracker = new TrackableUserContextTracker();
         }
     }
 }

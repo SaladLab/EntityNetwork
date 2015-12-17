@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using Domain;
@@ -18,66 +19,15 @@ public class ClientSnake : SnakeClientBase, ISnakeClientHandler
     }
 
     private readonly List<Part> _parts = new List<Part>();
+    private bool _useAi;
     private int _posX;
     private int _posY;
     private int _orientX;
     private int _orientY;
     private float _moveTime;
+    private readonly Queue<Tuple<int, int>> _inputQueue = new Queue<Tuple<int, int>>();
 
-    protected void Start()
-    {
-        _orientX = 1;
-        _orientY = 0;
-    }
-
-    protected void Update()
-    {
-        if (OwnerId != Zone.ClientId)
-            return;
-
-        if (Data.State != SnakeState.Dead)
-        {
-            _moveTime -= Time.deltaTime;
-            if (_moveTime < 0)
-            {
-                _posX += _orientX;
-                _posY += _orientY;
-
-                ((ClientZone)Zone).RunAction(z => Move(_posX, _posY));
-
-                // TODO: If it hit the wall we need to stop here ?.
-                MoveParts();
-
-                _moveTime += (float)Rule.SnakeSpeed.TotalSeconds;
-            }
-
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
-            {
-                _orientX = -1;
-                _orientY = 0;
-            }
-            else if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                _orientX = 1;
-                _orientY = 0;
-            }
-            else if (Input.GetKeyDown(KeyCode.UpArrow))
-            {
-                _orientX = 0;
-                _orientY = 1;
-            }
-            else if (Input.GetKeyDown(KeyCode.DownArrow))
-            {
-                _orientX = 0;
-                _orientY = -1;
-            }
-
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                ((ClientZone)Zone).RunAction(z => DebugGrowUp(1));
-            }
-        }
-    }
+    public bool IsControllable { get { return OwnerId == Zone.ClientId && !_useAi; } }
 
     public override void OnSnapshot(SnakeSnapshot snapshot)
     {
@@ -96,6 +46,14 @@ public class ClientSnake : SnakeClientBase, ISnakeClientHandler
                 part.Block.GetComponent<Image>().color = Color.gray;
             _parts.Add(part);
         }
+
+        var e = _parts.Count - 1;
+        _posX = _parts[e].X;
+        _posY = _parts[e].Y;
+        _orientX = _parts[e].X - _parts[e - 1].X;
+        _orientY = _parts[e].Y - _parts[e - 1].Y;
+
+        _useAi = snapshot.UseAi;
     }
 
     public void OnMove(int x, int y)
@@ -141,5 +99,46 @@ public class ClientSnake : SnakeClientBase, ISnakeClientHandler
             part.Block.localPosition = new Vector3(part.X * BlockSize, part.Y * BlockSize, 0);
             part.Block.gameObject.SetActive(true);
         }
+    }
+
+    protected void Update()
+    {
+        if (OwnerId != Zone.ClientId)
+            return;
+
+        if (Data.State != SnakeState.Dead)
+        {
+            _moveTime -= Time.deltaTime;
+            if (_moveTime < 0)
+            {
+                if (_inputQueue.Count > 0)
+                {
+                    var orient = _inputQueue.Dequeue();
+                    _orientX = orient.Item1;
+                    _orientY = orient.Item2;
+                }
+                else if (_useAi)
+                {
+                    var orient = SnakeAi.Think(_posX, _posY, _orientX, _orientY);
+                    _orientX = orient.Item1;
+                    _orientY = orient.Item2;
+                }
+
+                _posX += _orientX;
+                _posY += _orientY;
+
+                ((ClientZone)Zone).RunAction(z => Move(_posX, _posY));
+
+                // TODO: If it hit the wall we need to stop here ?.
+                MoveParts();
+
+                _moveTime += (float)Rule.SnakeSpeed.TotalSeconds;
+            }
+        }
+    }
+
+    public void QueueInput(int orientX, int orientY)
+    {
+        _inputQueue.Enqueue(Tuple.Create(orientX, orientY));
     }
 }

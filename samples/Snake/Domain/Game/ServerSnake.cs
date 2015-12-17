@@ -8,10 +8,14 @@ namespace Domain
     public class ServerSnake : SnakeServerBase, ISnakeServerHandler
     {
         public List<Tuple<int, int>> Parts { get; private set; }
+        public bool UseAi { get; private set; }
 
         public override void OnSpawn(object param)
         {
-            Parts = ((SnakeSnapshot)param).Parts;
+            var snapshot = (SnakeSnapshot)param;
+
+            Parts = snapshot.Parts;
+            UseAi = snapshot.UseAi;
 
             Data.Score = 0;
             Data.State = SnakeState.Ready;
@@ -19,7 +23,7 @@ namespace Domain
 
         public override SnakeSnapshot OnSnapshot()
         {
-            return new SnakeSnapshot { Parts = Parts };
+            return new SnakeSnapshot { Parts = Parts, UseAi = UseAi };
         }
 
         public void OnDebugGrowUp(int length)

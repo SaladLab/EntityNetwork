@@ -1,23 +1,30 @@
 ﻿using System;
 using System.Collections;
+using System.Linq;
 using Akka.Interfaced.SlimSocket.Client;
 using Domain;
+using EntityNetwork;
 using TypeAlias;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver
+public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver, IByteChannel
 {
     public RectTransform LoadingPanel;
     public RectTransform GamePanel;
+    public SnakeControlPad SnakeControlPad;
 
     public Text LoadingText;
     public Transform GameEntityRoot;
 
     private Tuple<long, string> _pairedGame;
     private int _gameObserverId;
-    private GameInfo _gameInfo;
+    private ObserverEventDispatcher _gameObserver;
     private GameClientRef _gameClient;
+    private int _gameClientId;
+    private GameInfo _gameInfo;
+    private ClientZone _zone;
+    private ProtobufChannelToClientZoneInbound _zoneChannel;
 
     protected void Start()
     {
@@ -31,6 +38,16 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver
         UiManager.Initialize();
 
         StartJoinGame();
+    }
+
+    protected void Update()
+    {
+        if (_zone != null)
+        {
+            // make gameObserver work in main thread
+            _gameObserver.Pending = false;
+            _gameObserver.Pending = true;
+        }
     }
 
     private void StartJoinGame()
@@ -89,7 +106,7 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver
 
         var observerId = G.Comm.IssueObserverId();
         G.Comm.AddObserver(observerId, new ObserverEventDispatcher(this));
-        yield return G.User.RegisterPairing(observerId).WaitHandle;
+        yield return G.User.RegisterPairing(GameDifficulty.Easy, observerId).WaitHandle;
 
         var startTime = DateTime.Now;
         while ((DateTime.Now - startTime).TotalSeconds < 5 && _pairedGame == null)
@@ -111,8 +128,8 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver
 
         var roomId = _pairedGame.Item1;
         var observerId2 = G.Comm.IssueObserverId();
-        var observer = new ObserverEventDispatcher(this, startPending: true, keepOrder: true);
-        G.Comm.AddObserver(observerId2, observer);
+        _gameObserver = new ObserverEventDispatcher(this, startPending: true, keepOrder: true);
+        G.Comm.AddObserver(observerId2, _gameObserver);
         var joinRet = G.User.JoinGame(roomId, observerId2);
         yield return joinRet.WaitHandle;
 
@@ -120,18 +137,31 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver
         {
             UiMessageBox.ShowMessageBox("Failed to join\n" + joinRet.Exception);
             G.Comm.RemoveObserver(observerId2);
+            _gameObserver = null;
             yield break;
         }
 
         _gameObserverId = observerId2;
+        _gameClient = new GameClientRef(new SlimActorRef(joinRet.Result.Item1), G.SlimRequestWaiter, null);
+        _gameClientId = joinRet.Result.Item2;
         _gameInfo = joinRet.Result.Item3;
-        /*
-        _myPlayerId = joinRet.Result.Item2;
-        */
-        _gameClient = new GameClientRef(
-            new SlimActorRef(joinRet.Result.Item1), G.SlimRequestWaiter, null);
 
-        observer.Pending = false;
+        _zone = new ClientZone(
+            ClientEntityFactory.Default,
+            new ProtobufChannelToServerZoneOutbound
+            {
+                TypeTable = new TypeAliasTable(),
+                TypeModel = new DomainProtobufSerializer(),
+                OutboundChannel = this
+            });
+
+        _zoneChannel = new ProtobufChannelToClientZoneInbound
+        {
+            TypeTable = new TypeAliasTable(),
+            TypeModel = new DomainProtobufSerializer(),
+            InboundClientZone = _zone
+        };
+
         LoadingText.text = "Waiting for " + _pairedGame.Item2 + "...";
     }
 
@@ -154,30 +184,43 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver
     void IGameObserver.ZoneMessage(byte[] bytes)
     {
         Debug.Log(string.Format("IGameObserver.ZoneMessage {0}", bytes.Length));
+        _zoneChannel.Write(bytes);
     }
 
-    public void OnLeftButtonClick()
+    void IGameObserver.Begin()
     {
-        OnKey(KeyCode.LeftArrow);
+        Debug.Log(string.Format("IGameObserver.Begin"));
+        BeginGame();
     }
 
-    public void OnRightButtonClick()
+    void IGameObserver.End()
     {
-        OnKey(KeyCode.RightArrow);
+        Debug.Log(string.Format("IGameObserver.End"));
+        EndGame();
     }
 
-    public void OnUpButtonClick()
+    void IGameObserver.Abort()
     {
-        OnKey(KeyCode.UpArrow);
+        Debug.Log(string.Format("IGameObserver.Abort"));
+        EndGame();
     }
 
-    public void OnDownButtonClick()
+    void IByteChannel.Write(byte[] bytes)
     {
-        OnKey(KeyCode.DownArrow);
+        _gameClient.ZoneMessage(bytes);
     }
 
-    private void OnKey(KeyCode code)
+    private void BeginGame()
     {
-        Debug.Log("OnKey " + code);
+        LoadingPanel.gameObject.SetActive(false);
+        GamePanel.gameObject.SetActive(true);
+
+        SnakeControlPad.Snake = _zone.GetEntities(typeof(ISnake))
+                                     .Select(e => (ClientSnake)e)
+                                     .FirstOrDefault(s => s.IsControllable);
+    }
+
+    private void EndGame()
+    {
     }
 }

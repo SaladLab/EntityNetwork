@@ -175,6 +175,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\core\EntityNetwork\EntityNetwork.csproj">
+      <Project>{b4dabd10-05b5-47f6-92d2-53f1cbe4214e}</Project>
+      <Name>EntityNetwork</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Domain\Snake.Domain.csproj">
       <Project>{23b5570b-8126-46cf-b3dd-5e1f86f5be38}</Project>
       <Name>Snake.Domain</Name>

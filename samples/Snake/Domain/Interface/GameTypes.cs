@@ -31,7 +31,8 @@ namespace Domain
     public class GameInfo
     {
         [ProtoMember(1)] public long Id;
-        [ProtoMember(2)] public GameState State;
-        [ProtoMember(3)] public List<string> PlayerNames;
+        [ProtoMember(2)] public bool WithBot;
+        [ProtoMember(3)] public GameState State;
+        [ProtoMember(4)] public List<string> PlayerNames;
     }
 }

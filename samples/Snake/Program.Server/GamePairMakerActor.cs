@@ -27,7 +27,7 @@ namespace GameServer
         }
 
         // NOTE: If more performance required, lookup could be optimized further.
-        private readonly List<QueueEntity> _pairingQueue;
+        private readonly List<QueueEntity>[] _pairingQueues;
 
         public GamePairMakerActor(ClusterNodeContext clusterContext)
         {
@@ -37,7 +37,9 @@ namespace GameServer
                 new ClusterActorDiscoveryMessage.RegisterActor(Self, nameof(IGamePairMaker)),
                 Self);
 
-            _pairingQueue = new List<QueueEntity>();
+            _pairingQueues = new List<QueueEntity>[Enum.GetValues(typeof(GameDifficulty)).Length];
+            for (var i = 0; i < _pairingQueues.Length; i++)
+                _pairingQueues[i] = new List<QueueEntity>();
         }
 
         protected override Task OnPreStart()
@@ -54,25 +56,35 @@ namespace GameServer
         [MessageHandler]
         private async Task OnSchedule(Schedule tick)
         {
-            if (_pairingQueue.Any() == false || _clusterContext.GameTable == null)
+            if (_clusterContext.GameTable == null)
                 return;
 
+            foreach (var pairingQueue in _pairingQueues)
+                await SchedulePairing(pairingQueue);
+        }
+
+        private async Task SchedulePairing(List<QueueEntity> pairingQueue)
+        { 
             // Pairing for two users
 
-            while (_pairingQueue.Count >= 2)
+            while (pairingQueue.Count >= 2)
             {
-                var entry0 = _pairingQueue[0];
-                var entry1 = _pairingQueue[1];
+                var entry0 = pairingQueue[0];
+                var entry1 = pairingQueue[1];
 
-                _pairingQueue.RemoveAt(0);
-                _pairingQueue.RemoveAt(0);
+                pairingQueue.RemoveAt(0);
+                pairingQueue.RemoveAt(0);
 
                 long gameId;
                 try
                 {
                     var ret = await _clusterContext.GameTable.Ask<DistributedActorTableMessage<long>.CreateReply>(
                         new DistributedActorTableMessage<long>.Create(
-                            new object[] { new CreateGameParam { Difficulty = GameDifficulty.Normal } }));
+                            new object[] { new CreateGameParam
+                            {
+                                Difficulty = GameDifficulty.Normal,
+                                WithBot = false,
+                            } }));
                     gameId = ret.Id;
                 }
                 catch (Exception e)
@@ -87,19 +99,23 @@ namespace GameServer
 
             // Pairing an user with a bot
 
-            if (_pairingQueue.Count == 1)
+            if (pairingQueue.Count == 1)
             {
-                var entry = _pairingQueue[0];
+                var entry = pairingQueue[0];
                 if ((DateTime.UtcNow - entry.EnqueueTime) > BotPairingTimeout)
                 {
-                    _pairingQueue.RemoveAt(0);
+                    pairingQueue.RemoveAt(0);
 
                     long gameId;
                     try
                     {
                         var ret = await _clusterContext.GameTable.Ask<DistributedActorTableMessage<long>.CreateReply>(
                             new DistributedActorTableMessage<long>.Create(
-                                new object[] { new CreateGameParam { Difficulty = GameDifficulty.Normal } }));
+                                new object[] { new CreateGameParam
+                                {
+                                    Difficulty = GameDifficulty.Normal,
+                                    WithBot = true,
+                                } }));
                         gameId = ret.Id;
                     }
                     catch (Exception e)
@@ -108,18 +124,18 @@ namespace GameServer
                         return;
                     }
 
-                    entry.Observer.MakePair(gameId, "bot");
+                    entry.Observer.MakePair(gameId, null);
                 }
             }
         }
 
         [ExtendedHandler]
-        private void RegisterPairing(long userId, string userName, IUserPairingObserver observer)
+        private void RegisterPairing(long userId, string userName, GameDifficulty difficulty, IUserPairingObserver observer)
         {
-            if (_pairingQueue.Any(i => i.UserId == userId))
+            if (_pairingQueues.Any(q => q.Any(i => i.UserId == userId)))
                 throw new ResultException(ResultCodeType.AlreadyPairingRegistered);
 
-            _pairingQueue.Add(new QueueEntity
+            _pairingQueues[(int)difficulty].Add(new QueueEntity
             {
                 UserId = userId,
                 UserName = userName,
@@ -131,7 +147,8 @@ namespace GameServer
         [ExtendedHandler]
         private void UnregisterPairing(long userId)
         {
-            _pairingQueue.RemoveAll(i => i.UserId == userId);
+            foreach (var pairingQueue in _pairingQueues)
+                pairingQueue.RemoveAll(i => i.UserId == userId);
         }
     }
 }

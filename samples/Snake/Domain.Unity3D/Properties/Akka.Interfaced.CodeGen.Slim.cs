@@ -153,7 +153,8 @@ namespace Domain
         [ProtoContract, TypeAlias]
         public class RegisterPairing_Invoke : IInterfacedPayload, IAsyncInvokable
         {
-            [ProtoMember(1)] public System.Int32 observerId;
+            [ProtoMember(1)] public Domain.GameDifficulty difficulty;
+            [ProtoMember(2)] public System.Int32 observerId;
 
             public Type GetInterfaceType() { return typeof(IUser); }
 
@@ -179,7 +180,7 @@ namespace Domain
     {
         void JoinGame(System.Int64 gameId, System.Int32 observerId);
         void LeaveGame(System.Int64 gameId);
-        void RegisterPairing(System.Int32 observerId);
+        void RegisterPairing(Domain.GameDifficulty difficulty, System.Int32 observerId);
         void UnregisterPairing();
     }
 
@@ -223,11 +224,11 @@ namespace Domain
             return SendRequestAndWait(requestMessage);
         }
 
-        public Task RegisterPairing(System.Int32 observerId)
+        public Task RegisterPairing(Domain.GameDifficulty difficulty, System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IUser_PayloadTable.RegisterPairing_Invoke { observerId = observerId }
+                InvokePayload = new IUser_PayloadTable.RegisterPairing_Invoke { difficulty = difficulty, observerId = observerId }
             };
             return SendRequestAndWait(requestMessage);
         }
@@ -259,11 +260,11 @@ namespace Domain
             SendRequest(requestMessage);
         }
 
-        void IUser_NoReply.RegisterPairing(System.Int32 observerId)
+        void IUser_NoReply.RegisterPairing(Domain.GameDifficulty difficulty, System.Int32 observerId)
         {
             var requestMessage = new RequestMessage
             {
-                InvokePayload = new IUser_PayloadTable.RegisterPairing_Invoke { observerId = observerId }
+                InvokePayload = new IUser_PayloadTable.RegisterPairing_Invoke { difficulty = difficulty, observerId = observerId }
             };
             SendRequest(requestMessage);
         }
@@ -409,6 +410,33 @@ namespace Domain
             public void Invoke(object target)
             {
                 ((IGameObserver)target).ZoneMessage(bytes);
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Begin_Invoke : IInvokable
+        {
+            public void Invoke(object target)
+            {
+                ((IGameObserver)target).Begin();
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class End_Invoke : IInvokable
+        {
+            public void Invoke(object target)
+            {
+                ((IGameObserver)target).End();
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Abort_Invoke : IInvokable
+        {
+            public void Invoke(object target)
+            {
+                ((IGameObserver)target).Abort();
             }
         }
     }
