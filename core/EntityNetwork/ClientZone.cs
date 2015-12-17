@@ -30,14 +30,37 @@ namespace EntityNetwork
             return _entityMap.TryGetValue(entityId, out entity) ? entity : null;
         }
 
+        public IClientEntity GetEntity(Type protoType)
+        {
+            return _entityMap.Values.FirstOrDefault(e => e.ProtoType == protoType);
+        }
+
+        public T GetEntity<T>() where T : class, IClientEntity
+        {
+            var protoType = _entityFactory.GetProtoType(typeof(T));
+            if (protoType == null)
+                throw new ArgumentException($"EntityType({nameof(T)}) doesn't have a prototype");
+
+            return (T)GetEntity(protoType);
+        }
+
         public IEnumerable<IClientEntity> GetEntities()
         {
             return _entityMap.Values;
         }
 
-        public IEnumerable<IClientEntity> GetEntities(Type protoTypeType)
+        public IEnumerable<IClientEntity> GetEntities(Type protoType)
         {
-            return _entityMap.Values.Where(e => e.ProtoTypeType == protoTypeType);
+            return _entityMap.Values.Where(e => e.ProtoType == protoType);
+        }
+
+        public IEnumerable<T> GetEntities<T>() where T : class, IClientEntity
+        {
+            var protoType = _entityFactory.GetProtoType(typeof(T));
+            if (protoType == null)
+                throw new ArgumentException($"EntityType({nameof(T)}) doesn't have a prototype");
+
+            return _entityMap.Values.Where(e => e.ProtoType == protoType).Cast<T>();
         }
 
         public TimeSpan GetTime()
@@ -52,13 +75,13 @@ namespace EntityNetwork
             _timeOffset = DateTime.UtcNow - (startTime + elapsedTime);
         }
 
-        void IChannelToClientZone.Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags,
+        void IChannelToClientZone.Spawn(int entityId, Type protoType, int ownerId, EntityFlags flags,
                                         ISpawnPayload payload)
         {
-            var entity = _entityFactory.Create(protoTypeType);
+            var entity = _entityFactory.Create(protoType);
 
             entity.Id = entityId;
-            entity.ProtoTypeType = protoTypeType;
+            entity.ProtoType = protoType;
             entity.Zone = this;
             entity.OwnerId = ownerId;
             entity.Flags = flags;

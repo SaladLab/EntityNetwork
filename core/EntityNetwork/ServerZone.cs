@@ -31,16 +31,27 @@ namespace EntityNetwork
             _startTime = DateTime.UtcNow;
         }
 
-        public IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags = EntityFlags.Normal,
+        public IServerEntity Spawn(Type protoType, int ownerId, EntityFlags flags = EntityFlags.Normal,
                                    object param = null)
         {
             var entityId = _lastEntityId += 1;
 
+            // check singleton condition
+
+            if ((flags & EntityFlags.Singleton) != 0)
+            {
+                if (GetEntity(protoType) != null)
+                    throw new InvalidOperationException($"Entity({protoType.Name}) should be singleton");
+            }
+
             // create server entity
 
-            var entity = _entityFactory.Create(protoTypeType);
+            var entity = _entityFactory.Create(protoType);
+            if (entity == null)
+                throw new InvalidOperationException($"EntityFactory cannot create entity from ProtoType({protoType.Name})");
+
             entity.Id = entityId;
-            entity.ProtoTypeType = protoTypeType;
+            entity.ProtoType = protoType;
             entity.Zone = this;
             entity.OwnerId = ownerId;
             entity.Flags = flags;
@@ -65,7 +76,7 @@ namespace EntityNetwork
             foreach (var clientChannel in _clientChannelMap.Values)
             {
                 // TODO: make batch api & use it for reducing network bandwidth in UNET
-                clientChannel.Spawn(entityId, protoTypeType, ownerId, flags, payload);
+                clientChannel.Spawn(entityId, protoType, ownerId, flags, payload);
             }
 
             return entity;
@@ -97,14 +108,37 @@ namespace EntityNetwork
             return _entityMap.TryGetValue(entityId, out entity) ? entity : null;
         }
 
+        public IServerEntity GetEntity(Type protoType)
+        {
+            return _entityMap.Values.FirstOrDefault(e => e.ProtoType == protoType);
+        }
+
+        public T GetEntity<T>() where T : class, IServerEntity
+        {
+            var protoType = _entityFactory.GetProtoType(typeof(T));
+            if (protoType == null)
+                throw new ArgumentException($"EntityType({nameof(T)}) doesn't have a prototype");
+
+            return (T)GetEntity(protoType);
+        }
+
         public IEnumerable<IServerEntity> GetEntities()
         {
             return _entityMap.Values;
         }
 
-        public IEnumerable<IServerEntity> GetEntities(Type protoTypeType)
+        public IEnumerable<IServerEntity> GetEntities(Type protoType)
         {
-            return _entityMap.Values.Where(e => e.ProtoTypeType == protoTypeType);
+            return _entityMap.Values.Where(e => e.ProtoType == protoType);
+        }
+
+        public IEnumerable<T> GetEntities<T>() where T : class, IServerEntity
+        {
+            var protoType = _entityFactory.GetProtoType(typeof(T));
+            if (protoType == null)
+                throw new ArgumentException($"EntityType({nameof(T)}) doesn't have a prototype");
+
+            return _entityMap.Values.Where(e => e.ProtoType == protoType).Cast<T>();
         }
 
         public TimeSpan GetTime()
@@ -182,7 +216,7 @@ namespace EntityNetwork
             foreach (var entity in _entityMap.Values)
             {
                 var payload = entity.GetSpawnPayload();
-                channelToClientZone.Spawn(entity.Id, entity.ProtoTypeType, entity.OwnerId, entity.Flags, payload);
+                channelToClientZone.Spawn(entity.Id, entity.ProtoType, entity.OwnerId, entity.Flags, payload);
             }
 
             channelToClientZone.End();

@@ -26,15 +26,7 @@ namespace Domain
             return new SnakeSnapshot { Parts = Parts, UseAi = UseAi };
         }
 
-        public void OnDebugGrowUp(int length)
-        {
-            for (var i=0; i<length ;i++)
-                Parts.Add(Parts.Last());
-
-            GrowUp(length);
-        }
-
-        public void OnMove(int x, int y)
+        void ISnakeServerHandler.OnMove(int x, int y)
         {
             // Move parts
 
@@ -46,26 +38,20 @@ namespace Domain
 
             // Check hit wall
 
-            if (x < 0 || x >= Rule.BoardWidth)
+            if (x < 0 || x >= Rule.BoardWidth || y < 0 || y >= Rule.BoardHeight)
             {
-                Data.State = SnakeState.Dead;
-                return;
-            }
-            if (y < 0 || y >= Rule.BoardHeight)
-            {
-                Data.State = SnakeState.Dead;
+                MakeDead();
                 return;
             }
 
             // Check hit parts of snakes
 
-            foreach (var entity in Zone.GetEntities(typeof(ISnake)))
+            foreach (var snake in Zone.GetEntities<ServerSnake>())
             {
-                var snake = (ServerSnake)entity;
                 var hit = snake.Parts.Skip(snake == this ? 1 : 0).Any(p => p.Item1 == x && p.Item2 == y);
                 if (hit)
                 {
-                    Data.State = SnakeState.Dead;
+                    MakeDead();
                     return;
                 }
             }
@@ -87,10 +73,15 @@ namespace Domain
                 Zone.Despawn(hitFruit.Id);
                 Data.Score += 1;
                 GrowUp(1);
-                ServerFruit.Spawn((ServerZone)Zone);
             }
 
             Move(x, y);
+        }
+
+        void MakeDead()
+        {
+            Data.State = SnakeState.Dead;
+            Zone.GetEntity<ServerZoneController>().OnSnakeDead(this);
         }
     }
 }

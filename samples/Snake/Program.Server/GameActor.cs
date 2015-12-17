@@ -38,6 +38,7 @@ namespace GameServer
 
         private List<Client> _clients = new List<Client>();
         private ServerZone _zone;
+        private ServerZoneController _zoneController;
 
         public GameActor(ClusterNodeContext clusterContext, long id, CreateGameParam param)
         {
@@ -133,31 +134,8 @@ namespace GameServer
 
             _zone.RunAction(zone =>
             {
-                var x1 = Rule.BoardWidth / 2;
-                var x2 = Rule.BoardWidth / 2 + 1;
-                var y1 = Rule.BoardHeight / 4;
-                var y2 = Rule.BoardHeight * 3 / 4;
-
-                zone.Spawn(typeof(ISnake), 1, EntityFlags.Normal,
-                           new SnakeSnapshot
-                           {
-                               Parts = new List<Tuple<int, int>>
-                               {
-                                   Tuple.Create(x1, y1),
-                                   Tuple.Create(x2, y1)
-                               }
-                           });
-
-                zone.Spawn(typeof(ISnake), _clients.Count, EntityFlags.Normal,
-                           new SnakeSnapshot
-                           {
-                               Parts = new List<Tuple<int, int>>
-                               {
-                                   Tuple.Create(x2, y2),
-                                   Tuple.Create(x1, y2)
-                               },
-                               UseAi = _clients.Count == 1,
-                           });
+                _zoneController = (ServerZoneController)zone.Spawn(typeof(IZoneController), 0, EntityFlags.Singleton);
+                _zoneController.Start(1, _clients.Count);
             });
 
             NotifyToAllObservers((id, o) => o.Begin());

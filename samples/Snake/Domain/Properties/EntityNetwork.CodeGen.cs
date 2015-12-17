@@ -108,6 +108,106 @@ namespace Domain
 
 #endregion
 
+#region IZoneController
+
+namespace Domain
+{
+    [PayloadTableForEntity(typeof(IZoneController))]
+    public static class IZoneController_PayloadTable
+    {
+        public static Type[] GetPayloadTypes()
+        {
+            return new Type[]
+            {
+                typeof(Begin_Invoke),
+                typeof(End_Invoke),
+            };
+        }
+
+        [ProtoContract, TypeAlias]
+        public class Begin_Invoke : IInvokePayload
+        {
+            public PayloadFlags Flags { get { return PayloadFlags.ToServer; } }
+
+            public void InvokeServer(IEntityServerHandler target)
+            {
+            }
+
+            public void InvokeClient(IEntityClientHandler target)
+            {
+                ((IZoneControllerClientHandler)target).OnBegin();
+            }
+        }
+
+        [ProtoContract, TypeAlias]
+        public class End_Invoke : IInvokePayload
+        {
+            public PayloadFlags Flags { get { return PayloadFlags.ToServer; } }
+
+            public void InvokeServer(IEntityServerHandler target)
+            {
+            }
+
+            public void InvokeClient(IEntityClientHandler target)
+            {
+                ((IZoneControllerClientHandler)target).OnEnd();
+            }
+        }
+    }
+
+    public interface IZoneControllerServerHandler : IEntityServerHandler
+    {
+    }
+
+    public abstract class ZoneControllerServerBase : ServerEntity
+    {
+        public override int TrackableDataCount { get { return 0; } }
+
+        public override ITrackable GetTrackableData(int index)
+        {
+            return null;
+        }
+
+        public override void SetTrackableData(int index, ITrackable trackable)
+        {
+        }
+
+        public void Begin()
+        {
+            var payload = new IZoneController_PayloadTable.Begin_Invoke {  };
+            SendInvoke(payload);
+        }
+
+        public void End()
+        {
+            var payload = new IZoneController_PayloadTable.End_Invoke {  };
+            SendInvoke(payload);
+        }
+    }
+
+    public interface IZoneControllerClientHandler : IEntityClientHandler
+    {
+        void OnBegin();
+        void OnEnd();
+    }
+
+    public abstract class ZoneControllerClientBase : ClientEntity
+    {
+        public override int TrackableDataCount { get { return 0; } }
+
+        public override ITrackable GetTrackableData(int index)
+        {
+            return null;
+        }
+
+        public override void SetTrackableData(int index, ITrackable trackable)
+        {
+        }
+    }
+}
+
+#endregion
+
 #region ISnake
 
 namespace Domain
@@ -119,27 +219,9 @@ namespace Domain
         {
             return new Type[]
             {
-                typeof(DebugGrowUp_Invoke),
                 typeof(GrowUp_Invoke),
                 typeof(Move_Invoke),
             };
-        }
-
-        [ProtoContract, TypeAlias]
-        public class DebugGrowUp_Invoke : IInvokePayload
-        {
-            [ProtoMember(1)] public int length;
-
-            public PayloadFlags Flags { get { return PayloadFlags.ToClient; } }
-
-            public void InvokeServer(IEntityServerHandler target)
-            {
-                ((ISnakeServerHandler)target).OnDebugGrowUp(length);
-            }
-
-            public void InvokeClient(IEntityClientHandler target)
-            {
-            }
         }
 
         [ProtoContract, TypeAlias]
@@ -226,7 +308,6 @@ namespace Domain
 
     public interface ISnakeServerHandler : IEntityServerHandler
     {
-        void OnDebugGrowUp(int length);
         void OnMove(int x, int y);
     }
 
@@ -313,12 +394,6 @@ namespace Domain
         public override void SetTrackableData(int index, ITrackable trackable)
         {
             if (index == 0) Data = (TrackableSnakeData)trackable;
-        }
-
-        public void DebugGrowUp(int length)
-        {
-            var payload = new ISnake_PayloadTable.DebugGrowUp_Invoke { length = length };
-            SendInvoke(payload);
         }
 
         public void Move(int x, int y)

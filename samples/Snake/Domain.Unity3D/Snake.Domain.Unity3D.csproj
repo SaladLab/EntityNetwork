@@ -98,6 +98,9 @@
     <Compile Include="..\Domain\Game\ISnake.cs">
       <Link>Game\ISnake.cs</Link>
     </Compile>
+    <Compile Include="..\Domain\Game\IZoneController.cs">
+      <Link>Game\IZoneController.cs</Link>
+    </Compile>
     <Compile Include="..\Domain\Game\Rule.cs">
       <Link>Game\Rule.cs</Link>
     </Compile>
@@ -106,6 +109,9 @@
     </Compile>
     <Compile Include="..\Domain\Game\ServerSnake.cs">
       <Link>Game\ServerSnake.cs</Link>
+    </Compile>
+    <Compile Include="..\Domain\Game\ServerZoneController.cs">
+      <Link>Game\ServerZoneController.cs</Link>
     </Compile>
     <Compile Include="..\Domain\Interface\GameTypes.cs">
       <Link>Interface\GameTypes.cs</Link>

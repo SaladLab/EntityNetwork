@@ -89,10 +89,12 @@
     <Compile Include="Data\IUserContext.cs" />
     <Compile Include="Data\IUserData.cs" />
     <Compile Include="Game\IFruit.cs" />
+    <Compile Include="Game\IZoneController.cs" />
     <Compile Include="Game\ISnake.cs" />
     <Compile Include="Game\Rule.cs" />
     <Compile Include="Game\ServerFruit.cs" />
     <Compile Include="Game\ServerSnake.cs" />
+    <Compile Include="Game\ServerZoneController.cs" />
     <Compile Include="Interface\GameTypes.cs" />
     <Compile Include="Interface\IGame.cs" />
     <Compile Include="Interface\IGameClient.cs" />

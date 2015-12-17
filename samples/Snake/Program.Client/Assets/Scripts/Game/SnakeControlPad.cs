@@ -46,6 +46,7 @@ public class SnakeControlPad : MonoBehaviour
 
     private void OnInput(int orientX, int orientY)
     {
-        Snake.QueueInput(orientX, orientY);
+        if (Snake != null)
+            Snake.QueueInput(orientX, orientY);
     }
 }

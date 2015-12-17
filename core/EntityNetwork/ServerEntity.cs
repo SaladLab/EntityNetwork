@@ -8,7 +8,7 @@ namespace EntityNetwork
     public interface IServerEntity
     {
         int Id { get; set; }
-        Type ProtoTypeType { get; set; }
+        Type ProtoType { get; set; }
         IServerZone Zone { get; set; }
         int OwnerId { get; set; }
         EntityFlags Flags { get; set; }
@@ -29,7 +29,7 @@ namespace EntityNetwork
     public abstract class ServerEntity : IServerEntity
     {
         public int Id { get; set; }
-        public Type ProtoTypeType { get; set; }
+        public Type ProtoType { get; set; }
         public IServerZone Zone { get; set; }
         public int OwnerId { get; set; }
         public EntityFlags Flags { get; set; }

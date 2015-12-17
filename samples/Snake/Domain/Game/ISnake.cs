@@ -17,9 +17,6 @@ namespace Domain
 
         void Move(int x, int y);
 
-        [ToServer]
-        void DebugGrowUp(int length);
-
         [ToClient]
         void GrowUp(int length);
     }

@@ -51,13 +51,13 @@ namespace EntityNetwork
             _writer.Write(elapsedTime.Ticks);
         }
 
-        public void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload)
+        public void Spawn(int entityId, Type protoType, int ownerId, EntityFlags flags, ISpawnPayload payload)
         {
             _writer.Write((byte)2);
             _writer.Write(entityId);
-            var typeAlias = TypeTable.GetAlias(protoTypeType);
+            var typeAlias = TypeTable.GetAlias(protoType);
             if (typeAlias == 0)
-                throw new ArgumentException("Type of protoType doesn't have alias. Type: " + protoTypeType.FullName);
+                throw new ArgumentException("Type of protoType doesn't have alias. Type: " + protoType.FullName);
             _writer.Write(typeAlias);
             _writer.Write(ownerId);
             _writer.Write((byte)flags);

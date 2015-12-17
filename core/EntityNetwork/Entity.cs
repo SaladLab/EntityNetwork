@@ -18,8 +18,9 @@ namespace EntityNetwork
     public enum EntityFlags : byte
     {
         Normal = 0,
-        LiveWhenOwnerGoAway = 1,
-        AnyoneCanControl = 2,
-        ClientCanUpdateTrackableData = 4, // TODO: Implement
+        Singleton = 1,
+        LiveWhenOwnerGoAway = 2,
+        AnyoneCanControl = 4,
+        // TODO: ClientCanUpdateTrackableData
     }
 }

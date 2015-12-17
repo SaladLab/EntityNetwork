@@ -47,11 +47,10 @@ public class ClientSnake : SnakeClientBase, ISnakeClientHandler
             _parts.Add(part);
         }
 
-        var e = _parts.Count - 1;
-        _posX = _parts[e].X;
-        _posY = _parts[e].Y;
-        _orientX = _parts[e].X - _parts[e - 1].X;
-        _orientY = _parts[e].Y - _parts[e - 1].Y;
+        _posX = _parts[0].X;
+        _posY = _parts[0].Y;
+        _orientX = _parts[0].X - _parts[1].X;
+        _orientY = _parts[0].Y - _parts[1].Y;
 
         _useAi = snapshot.UseAi;
     }

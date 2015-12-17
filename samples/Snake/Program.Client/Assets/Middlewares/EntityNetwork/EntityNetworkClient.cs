@@ -10,6 +10,7 @@ using UnityEngine.Networking;
 public class EntityNetworkClient : NetworkBehaviour
 {
     public static int LocalClientId;
+    public static ClientZone LocalClientZone;
 
     private int _clientId;
     private ClientZone _zone;
@@ -50,7 +51,9 @@ public class EntityNetworkClient : NetworkBehaviour
             TypeModel = EntityNetworkManager.ProtobufTypeModel,
             InboundClientZone = _zone
         };
+
         LocalClientId = _clientId;
+        LocalClientZone = _zone;
 
         CmdAddClientToZone();
     }
@@ -93,6 +96,11 @@ public class EntityNetworkClient : NetworkBehaviour
 
         EntityNetworkManager.Instance.Zone.RunAction(zone =>
         {
+            var controller = (ServerZoneController)zone.Spawn(typeof(IZoneController), 0, EntityFlags.Singleton);
+            controller.Start(_clientId, _clientId);
+
+            // Start()
+            /*
             zone.Spawn(typeof(ISnake), _clientId, EntityFlags.Normal,
                        new SnakeSnapshot
                        {
@@ -100,8 +108,9 @@ public class EntityNetworkClient : NetworkBehaviour
                        });
 
             // Zone Controller?
-            if (zone.GetEntities(typeof(IFruit)).Any() == false)
-                ServerFruit.Spawn(zone);
+            //if (zone.GetEntities(typeof(IFruit)).Any() == false)
+            //    ServerFruit.Spawn(zone);
+            */
         });
     }
 

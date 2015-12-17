@@ -11,11 +11,14 @@ namespace EntityNetwork
 
     public interface IServerZone : IZone
     {
-        IServerEntity Spawn(Type protoTypeType, int ownerId, EntityFlags flags, object param);
+        IServerEntity Spawn(Type protoType, int ownerId, EntityFlags flags, object param);
         bool Despawn(int id);
         IServerEntity GetEntity(int entityId);
+        IServerEntity GetEntity(Type protoType);
+        T GetEntity<T>() where T : class, IServerEntity;
         IEnumerable<IServerEntity> GetEntities();
-        IEnumerable<IServerEntity> GetEntities(Type protoTypeType);
+        IEnumerable<IServerEntity> GetEntities(Type protoType);
+        IEnumerable<T> GetEntities<T>() where T : class, IServerEntity;
         TimeSpan GetTime();
     }
 
@@ -23,8 +26,11 @@ namespace EntityNetwork
     {
         int ClientId { get; }
         IClientEntity GetEntity(int entityId);
+        IClientEntity GetEntity(Type protoType);
+        T GetEntity<T>() where T : class, IClientEntity;
         IEnumerable<IClientEntity> GetEntities();
-        IEnumerable<IClientEntity> GetEntities(Type protoTypeType);
+        IEnumerable<IClientEntity> GetEntities(Type protoType);
+        IEnumerable<T> GetEntities<T>() where T : class, IClientEntity;
         TimeSpan GetTime();
     }
 
@@ -37,7 +43,7 @@ namespace EntityNetwork
     public interface IChannelToClientZone
     {
         void Init(int clientId, DateTime startTime, TimeSpan elapsedTime);
-        void Spawn(int entityId, Type protoTypeType, int ownerId, EntityFlags flags, ISpawnPayload payload);
+        void Spawn(int entityId, Type protoType, int ownerId, EntityFlags flags, ISpawnPayload payload);
         void Despawn(int entityId);
         void Invoke(int entityId, IInvokePayload payload);
         void UpdateChange(int entityId, IUpdateChangePayload payload);
