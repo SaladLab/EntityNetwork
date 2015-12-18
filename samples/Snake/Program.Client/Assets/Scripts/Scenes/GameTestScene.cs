@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using TypeAlias;
+﻿using TypeAlias;
 using UnityEngine;
 
 public class GameTestScene : MonoBehaviour
@@ -17,17 +16,5 @@ public class GameTestScene : MonoBehaviour
 
         ApplicationComponent.TryInit();
         UiManager.Initialize();
-    }
-
-    protected void Update()
-    {
-        ClientSnake snake = null;
-
-        if (EntityNetworkClient.LocalClientZone != null)
-        {
-            snake = EntityNetworkClient.LocalClientZone.GetEntities<ClientSnake>().FirstOrDefault(s => s.IsControllable);
-        }
-
-        SnakeControlPad.Snake = snake;
     }
 }

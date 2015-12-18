@@ -426,6 +426,164 @@ namespace Domain
 
 #endregion
 
+#region IZoneControllerData
+
+namespace Domain
+{
+    [ProtoContract]
+    public partial class TrackableZoneControllerData : IZoneControllerData
+    {
+        [IgnoreDataMember]
+        public IPocoTracker<IZoneControllerData> Tracker { get; set; }
+
+        public bool Changed { get { return Tracker != null && Tracker.HasChange; } }
+
+        ITracker ITrackable.Tracker
+        {
+            get
+            {
+                return Tracker;
+            }
+            set
+            {
+                var t = (IPocoTracker<IZoneControllerData>)value;
+                Tracker = t;
+            }
+        }
+
+        ITracker<IZoneControllerData> ITrackable<IZoneControllerData>.Tracker
+        {
+            get
+            {
+                return Tracker;
+            }
+            set
+            {
+                var t = (IPocoTracker<IZoneControllerData>)value;
+                Tracker = t;
+            }
+        }
+
+        public ITrackable GetChildTrackable(object name)
+        {
+            switch ((string)name)
+            {
+                default:
+                    return null;
+            }
+        }
+
+        public IEnumerable<KeyValuePair<object, ITrackable>> GetChildTrackables(bool changedOnly = false)
+        {
+            yield break;
+        }
+
+        public static class PropertyTable
+        {
+            public static readonly PropertyInfo State = typeof(IZoneControllerData).GetProperty("State");
+            public static readonly PropertyInfo StartTime = typeof(IZoneControllerData).GetProperty("StartTime");
+            public static readonly PropertyInfo Winner = typeof(IZoneControllerData).GetProperty("Winner");
+        }
+
+        private ZoneState _State;
+
+        [ProtoMember(1)] public ZoneState State
+        {
+            get
+            {
+                return _State;
+            }
+            set
+            {
+                if (Tracker != null && State != value)
+                    Tracker.TrackSet(PropertyTable.State, _State, value);
+                _State = value;
+            }
+        }
+
+        private TimeSpan _StartTime;
+
+        [ProtoMember(2)] public TimeSpan StartTime
+        {
+            get
+            {
+                return _StartTime;
+            }
+            set
+            {
+                if (Tracker != null && StartTime != value)
+                    Tracker.TrackSet(PropertyTable.StartTime, _StartTime, value);
+                _StartTime = value;
+            }
+        }
+
+        private int _Winner;
+
+        [ProtoMember(3)] public int Winner
+        {
+            get
+            {
+                return _Winner;
+            }
+            set
+            {
+                if (Tracker != null && Winner != value)
+                    Tracker.TrackSet(PropertyTable.Winner, _Winner, value);
+                _Winner = value;
+            }
+        }
+    }
+
+    [ProtoContract]
+    public class TrackableZoneControllerDataTrackerSurrogate
+    {
+        [ProtoMember(1)] public EnvelopedObject<ZoneState> State;
+        [ProtoMember(2)] public EnvelopedObject<TimeSpan> StartTime;
+        [ProtoMember(3)] public EnvelopedObject<int> Winner;
+
+        public static implicit operator TrackableZoneControllerDataTrackerSurrogate(TrackablePocoTracker<IZoneControllerData> tracker)
+        {
+            if (tracker == null)
+                return null;
+
+            var surrogate = new TrackableZoneControllerDataTrackerSurrogate();
+            foreach(var changeItem in tracker.ChangeMap)
+            {
+                switch (changeItem.Key.Name)
+                {
+                    case "State":
+                        surrogate.State = new EnvelopedObject<ZoneState> { Value = (ZoneState)changeItem.Value.NewValue };
+                        break;
+                    case "StartTime":
+                        surrogate.StartTime = new EnvelopedObject<TimeSpan> { Value = (TimeSpan)changeItem.Value.NewValue };
+                        break;
+                    case "Winner":
+                        surrogate.Winner = new EnvelopedObject<int> { Value = (int)changeItem.Value.NewValue };
+                        break;
+                }
+            }
+            return surrogate;
+        }
+
+        public static implicit operator TrackablePocoTracker<IZoneControllerData>(TrackableZoneControllerDataTrackerSurrogate surrogate)
+        {
+            if (surrogate == null)
+                return null;
+
+            var tracker = new TrackablePocoTracker<IZoneControllerData>();
+            if (surrogate.State != null)
+                tracker.ChangeMap.Add(TrackableZoneControllerData.PropertyTable.State, new TrackablePocoTracker<IZoneControllerData>.Change { NewValue = surrogate.State.Value });
+            if (surrogate.StartTime != null)
+                tracker.ChangeMap.Add(TrackableZoneControllerData.PropertyTable.StartTime, new TrackablePocoTracker<IZoneControllerData>.Change { NewValue = surrogate.StartTime.Value });
+            if (surrogate.Winner != null)
+                tracker.ChangeMap.Add(TrackableZoneControllerData.PropertyTable.Winner, new TrackablePocoTracker<IZoneControllerData>.Change { NewValue = surrogate.Winner.Value });
+            return tracker;
+        }
+    }
+}
+
+#endregion
+
 #region IUserContext
 
 namespace Domain

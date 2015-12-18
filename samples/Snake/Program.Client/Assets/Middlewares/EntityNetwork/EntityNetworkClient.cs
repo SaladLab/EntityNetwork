@@ -98,19 +98,6 @@ public class EntityNetworkClient : NetworkBehaviour
         {
             var controller = (ServerZoneController)zone.Spawn(typeof(IZoneController), 0, EntityFlags.Singleton);
             controller.Start(_clientId, _clientId);
-
-            // Start()
-            /*
-            zone.Spawn(typeof(ISnake), _clientId, EntityFlags.Normal,
-                       new SnakeSnapshot
-                       {
-                           Parts = new List<Tuple<int, int>> { Tuple.Create(0, 0), Tuple.Create(1, 0) }
-                       });
-
-            // Zone Controller?
-            //if (zone.GetEntities(typeof(IFruit)).Any() == false)
-            //    ServerFruit.Spawn(zone);
-            */
         });
     }
 

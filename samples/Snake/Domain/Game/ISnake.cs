@@ -25,8 +25,8 @@ namespace Domain
     {
         None = 0,
         Ready = 1,
-        Running = 2,
-        Dead = 3,
+        Playing = 2,
+        Stopped = 3,
     }
 
     [ProtoContract]

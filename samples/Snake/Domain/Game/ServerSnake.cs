@@ -72,15 +72,21 @@ namespace Domain
             {
                 Zone.Despawn(hitFruit.Id);
                 Data.Score += 1;
+                Parts.Add(Parts.Last());
                 GrowUp(1);
             }
 
             Move(x, y);
         }
 
-        void MakeDead()
+        public void MakePlaying()
         {
-            Data.State = SnakeState.Dead;
+            Data.State = SnakeState.Playing;
+        }
+
+        public void MakeDead()
+        {
+            Data.State = SnakeState.Stopped;
             Zone.GetEntity<ServerZoneController>().OnSnakeDead(this);
         }
     }

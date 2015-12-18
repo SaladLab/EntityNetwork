@@ -7,12 +7,48 @@ namespace Domain
 {
     public class ServerZoneController : ZoneControllerServerBase, IZoneControllerServerHandler
     {
-        public Action<bool> StateChanged;
+        private readonly ServerSnake[] _snakes = new ServerSnake[2];
+
+        public Action<ServerZoneController, ZoneState> StateChanged;
+
+        private void SetState(ZoneState state)
+        {
+            if (Data.State == state)
+                return;
+
+            Data.State = state;
+            StateChanged?.Invoke(this, state);
+        }
 
         public void Start(int clientId1, int clientId2)
         {
+            if (Data.State != ZoneState.None)
+                throw new InvalidOperationException("State should be None. but " + Data.State);
+
+            SetState(ZoneState.Ready);
             SpawnSnakes(clientId1, clientId2);
-            SetTimerOnce(1, TimeSpan.FromSeconds(1), OnFruitSpawnTimer);
+
+            SetTimerOnce(1, TimeSpan.FromSeconds(1), (e, t) =>
+            {
+                if (Data.State != ZoneState.Ready)
+                    return;
+
+                foreach (var snake in _snakes)
+                    snake.MakePlaying();
+
+                SetState(ZoneState.Playing);
+                SetTimerOnce(2, TimeSpan.FromSeconds(1), OnFruitSpawnTimer);
+            });
+        }
+
+        public void Stop()
+        {
+            if (Data.State != ZoneState.Playing)
+                return;
+
+            SetState(ZoneState.Stopped);
+            foreach (var snake in _snakes)
+                snake.MakeDead();
         }
 
         private void SpawnSnakes(int clientId1, int clientId2)
@@ -22,31 +58,46 @@ namespace Domain
             var y1 = Rule.BoardHeight / 4;
             var y2 = Rule.BoardHeight * 3 / 4;
 
-            Zone.Spawn(typeof(ISnake), clientId1, EntityFlags.Normal,
-                       new SnakeSnapshot
-                       {
-                           Parts = new List<Tuple<int, int>>
-                           {
-                                   Tuple.Create(x1, y1),
-                                   Tuple.Create(x2, y1)
-                           }
-                       });
+            _snakes[0] = (ServerSnake)Zone.Spawn(
+                typeof(ISnake), clientId1, EntityFlags.Normal,
+                new SnakeSnapshot
+                {
+                    Parts = new List<Tuple<int, int>>
+                    {
+                        Tuple.Create(x1, y1),
+                        Tuple.Create(x2, y1)
+                    }
+                });
 
-            Zone.Spawn(typeof(ISnake), clientId2, EntityFlags.Normal,
-                       new SnakeSnapshot
-                       {
-                           Parts = new List<Tuple<int, int>>
-                           {
-                                   Tuple.Create(x2, y2),
-                                   Tuple.Create(x1, y2)
-                           },
-                           UseAi = clientId1 == clientId2,
-                       });
+            _snakes[1] = (ServerSnake)Zone.Spawn(
+                typeof(ISnake), clientId2, EntityFlags.Normal,
+                new SnakeSnapshot
+                {
+                    Parts = new List<Tuple<int, int>>
+                    {
+                        Tuple.Create(x2, y2),
+                        Tuple.Create(x1, y2)
+                    },
+                    UseAi = clientId1 == clientId2,
+                });
         }
 
         public void OnSnakeDead(ServerSnake snake)
         {
-            // TODO: GAME OVER
+            if (Data.State != ZoneState.Playing)
+                return;
+
+            SetState(ZoneState.Stopped);
+            if (snake == _snakes[0])
+            {
+                _snakes[1].MakeDead();
+                Data.Winner = 2;
+            }
+            if (snake == _snakes[1])
+            {
+                _snakes[0].MakeDead();
+                Data.Winner = 1;
+            }
         }
 
         private void SpawnFruit()
@@ -69,7 +120,7 @@ namespace Domain
 
         public void OnFruitDespawn(ServerFruit fruit)
         {
-            SetTimerOnce(1, TimeSpan.FromSeconds(2), OnFruitSpawnTimer);
+            SetTimerOnce(2, TimeSpan.FromSeconds(2), OnFruitSpawnTimer);
         }
 
         private void OnFruitSpawnTimer(IEntity entity, int timerId)

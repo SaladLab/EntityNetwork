@@ -110,14 +110,14 @@ namespace CodeGen
                 usingDirectives.Add("System.Text");
                 usingDirectives.Add("EntityNetwork");
                 usingDirectives.Add("TrackableData");
-                foreach (var usingDirective in usingDirectives)
-                    writer.AddUsing(usingDirective);
                 if (options.UseProtobuf)
                 {
-                    writer.AddUsing("ProtoBuf");
-                    writer.AddUsing("TypeAlias");
-                    writer.AddUsing("System.ComponentModel");
+                    usingDirectives.Add("ProtoBuf");
+                    usingDirectives.Add("TypeAlias");
+                    usingDirectives.Add("System.ComponentModel");
                 }
+                foreach (var usingDirective in usingDirectives)
+                    writer.AddUsing(usingDirective);
 
                 // Save generated code
 

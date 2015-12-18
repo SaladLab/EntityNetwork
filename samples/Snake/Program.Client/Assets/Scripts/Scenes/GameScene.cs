@@ -12,7 +12,6 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver, IBy
 {
     public RectTransform LoadingPanel;
     public RectTransform GamePanel;
-    public SnakeControlPad SnakeControlPad;
 
     public Text LoadingText;
     public Transform GameEntityRoot;
@@ -214,10 +213,6 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver, IBy
     {
         LoadingPanel.gameObject.SetActive(false);
         GamePanel.gameObject.SetActive(true);
-
-        SnakeControlPad.Snake = _zone.GetEntities(typeof(ISnake))
-                                     .Select(e => (ClientSnake)e)
-                                     .FirstOrDefault(s => s.IsControllable);
     }
 
     private void EndGame()

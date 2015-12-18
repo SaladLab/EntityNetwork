@@ -47,6 +47,7 @@ namespace GameServer
             _id = id;
             _param = param;
             _zone = new ServerZone(EntityFactory.Default);
+            ((EntityTimerProvider)_zone.TimerProvider).ActionScheduled = OnActionSchedule;
         }
 
         private GameInfo GetGameInfo()
@@ -82,10 +83,29 @@ namespace GameServer
             return typeModel;
         });
 
+        private void OnActionSchedule(TimeSpan delay, Action action)
+        {
+            Context.System.Scheduler.ScheduleTellOnce(delay, Self, EntityTimerScheduleMessage.Instance, Self);
+        }
+
+        private class EntityTimerScheduleMessage
+        {
+            public static readonly EntityTimerScheduleMessage Instance = new EntityTimerScheduleMessage();
+        }
+
+        [MessageHandler]
+        private void OnMessage(EntityTimerScheduleMessage m)
+        {
+            _zone.RunAction(z =>
+            {
+                ((EntityTimerProvider)z.TimerProvider).ProcessWork();
+            });
+        }
+
         [ExtendedHandler]
         private Tuple<int, GameInfo> Join(long userId, string userName, IGameObserver observer)
         {
-            if (_state != GameState.WaitingForPlayers)
+            if (_state != GameState.Waiting)
                 throw new ResultException(ResultCodeType.GameStarted);
 
             if (_clients.Count > 2)
@@ -127,20 +147,33 @@ namespace GameServer
 
         private void BeginGame()
         {
-            if (_state != GameState.WaitingForPlayers)
+            if (_state != GameState.Waiting)
                 return;
 
             _state = GameState.Playing;
+
+            NotifyToAllObservers((id, o) => o.Begin());
 
             _zone.RunAction(zone =>
             {
                 _zoneController = (ServerZoneController)zone.Spawn(typeof(IZoneController), 0, EntityFlags.Singleton);
                 _zoneController.Start(1, _clients.Count);
+                _zoneController.StateChanged = OnZoneStateChange;
             });
 
-            NotifyToAllObservers((id, o) => o.Begin());
-
             // TODO: How to know game over
+        }
+
+        private void OnZoneStateChange(ServerZoneController zoneController, ZoneState state)
+        {
+            if (state == ZoneState.Stopped)
+            {
+                if (_state == GameState.Playing)
+                {
+                    _state = GameState.Ended;
+                    NotifyToAllObservers((id, o) => o.End());
+                }
+            }
         }
 
         private int GetClientId(long userId)
@@ -163,7 +196,7 @@ namespace GameServer
 
             if (_state != GameState.Ended)
             {
-                // TODO: STATE
+                _zoneController?.Stop();
                 _state = GameState.Aborted;
                 NotifyToAllObservers((id, o) => o.Abort());
             }

@@ -17,8 +17,6 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 using System.Runtime.Serialization;
-using ProtoBuf;
-using TypeAlias;
 using System.ComponentModel;
 
 #region IFruit
@@ -119,38 +117,48 @@ namespace Domain
         {
             return new Type[]
             {
-                typeof(Begin_Invoke),
-                typeof(End_Invoke),
             };
         }
 
         [ProtoContract, TypeAlias]
-        public class Begin_Invoke : IInvokePayload
+        public class Spawn : ISpawnPayload
         {
-            public PayloadFlags Flags { get { return PayloadFlags.ToServer; } }
+            [ProtoMember(1)] public TrackableZoneControllerData Data;
 
-            public void InvokeServer(IEntityServerHandler target)
+            public void Gather(IServerEntity entity)
             {
+                var e = (ZoneControllerServerBase)entity;
+                Data = e.Data;
             }
 
-            public void InvokeClient(IEntityClientHandler target)
+            public void Notify(IClientEntity entity)
             {
-                ((IZoneControllerClientHandler)target).OnBegin();
+                var e = (ZoneControllerClientBase)entity;
+                e.Data = Data;
             }
         }
 
         [ProtoContract, TypeAlias]
-        public class End_Invoke : IInvokePayload
+        public class UpdateChange : IUpdateChangePayload
         {
-            public PayloadFlags Flags { get { return PayloadFlags.ToServer; } }
+            [ProtoMember(1)] public TrackablePocoTracker<IZoneControllerData> DataTracker;
 
-            public void InvokeServer(IEntityServerHandler target)
+            public void Gather(IServerEntity entity)
             {
+                var e = (ZoneControllerServerBase)entity;
+                if (e.Data.Changed)
+                    DataTracker = (TrackablePocoTracker<IZoneControllerData>)e.Data.Tracker;
             }
 
-            public void InvokeClient(IEntityClientHandler target)
+            public void Notify(IClientEntity entity)
             {
-                ((IZoneControllerClientHandler)target).OnEnd();
+                var e = (ZoneControllerClientBase)entity;
+                if (DataTracker != null)
+                {
+                    e.OnTrackableDataChanging(0, DataTracker);
+                    DataTracker.ApplyTo(e.Data);
+                    e.OnTrackableDataChanged(0, DataTracker);
+                }
             }
         }
     }
@@ -161,47 +169,65 @@ namespace Domain
 
     public abstract class ZoneControllerServerBase : ServerEntity
     {
-        public override int TrackableDataCount { get { return 0; } }
+        public TrackableZoneControllerData Data { get; set; }
+
+        protected ZoneControllerServerBase()
+        {
+            Data = new TrackableZoneControllerData();
+        }
+
+        public override int TrackableDataCount { get { return 1; } }
 
         public override ITrackable GetTrackableData(int index)
         {
+            if (index == 0) return Data;
             return null;
         }
 
         public override void SetTrackableData(int index, ITrackable trackable)
         {
+            if (index == 0) Data = (TrackableZoneControllerData)trackable;
         }
 
-        public void Begin()
+        public override ISpawnPayload GetSpawnPayload()
         {
-            var payload = new IZoneController_PayloadTable.Begin_Invoke {  };
-            SendInvoke(payload);
+            var payload = new IZoneController_PayloadTable.Spawn();
+            payload.Gather(this);
+            return payload;
         }
 
-        public void End()
+        public override IUpdateChangePayload GetUpdateChangePayload()
         {
-            var payload = new IZoneController_PayloadTable.End_Invoke {  };
-            SendInvoke(payload);
+            var payload = new IZoneController_PayloadTable.UpdateChange();
+            payload.Gather(this);
+            return payload;
         }
     }
 
     public interface IZoneControllerClientHandler : IEntityClientHandler
     {
-        void OnBegin();
-        void OnEnd();
     }
 
     public abstract class ZoneControllerClientBase : ClientEntity
     {
-        public override int TrackableDataCount { get { return 0; } }
+        public TrackableZoneControllerData Data { get; set; }
+
+        protected ZoneControllerClientBase()
+        {
+            Data = new TrackableZoneControllerData();
+        }
+
+        public override int TrackableDataCount { get { return 1; } }
 
         public override ITrackable GetTrackableData(int index)
         {
+            if (index == 0) return Data;
             return null;
         }
 
         public override void SetTrackableData(int index, ITrackable trackable)
         {
+            if (index == 0) Data = (TrackableZoneControllerData)trackable;
         }
     }
 }

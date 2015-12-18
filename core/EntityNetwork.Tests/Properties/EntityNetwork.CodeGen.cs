@@ -17,8 +17,6 @@ using System.Runtime.Serialization;
 using System.Linq;
 using System.Text;
 using EntityNetwork;
-using ProtoBuf;
-using TypeAlias;
 using System.ComponentModel;
 
 #region IBullet

@@ -18,8 +18,6 @@ using ProtoBuf;
 using TrackableData;
 using System.Reflection;
 using System.Runtime.Serialization;
-using ProtoBuf;
-using TypeAlias;
 using System.ComponentModel;
 
 #region IBullet

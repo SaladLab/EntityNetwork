@@ -6,18 +6,10 @@ namespace Domain
 {
     public enum GameState
     {
-        WaitingForPlayers,
+        Waiting,
         Playing,
         Ended,
         Aborted,
-    }
-
-    public enum GameResult
-    {
-        None,
-        Win,
-        Lose,
-        Draw,
     }
 
     public enum GameDifficulty
