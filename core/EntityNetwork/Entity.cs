@@ -14,6 +14,11 @@ namespace EntityNetwork
     {
     }
 
+    public interface IEntity
+    {
+        int Id { get; set; }
+    }
+
     [Flags]
     public enum EntityFlags : byte
     {

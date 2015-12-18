@@ -7,6 +7,7 @@ namespace EntityNetwork
     public class ClientZone : IClientZone, IChannelToClientZone
     {
         private readonly IClientEntityFactory _entityFactory;
+        private readonly EntityTimerProvider _timerProvider;
         private readonly Dictionary<int, IClientEntity> _entityMap = new Dictionary<int, IClientEntity>();
         private readonly ProtobufChannelToServerZoneOutbound _serverChannel;
         private int _clientId;
@@ -15,12 +16,14 @@ namespace EntityNetwork
 
         public int ClientId => _clientId;
 
+        public IEntityTimerProvider TimerProvider { get { return _timerProvider; } }
         public Action<IClientEntity> EntitySpawned;
         public Action<IClientEntity> EntityDespawned;
 
         public ClientZone(IClientEntityFactory entityFactory, ProtobufChannelToServerZoneOutbound serverChannel)
         {
             _entityFactory = entityFactory;
+            _timerProvider = new EntityTimerProvider(this);
             _serverChannel = serverChannel;
         }
 
@@ -68,6 +71,12 @@ namespace EntityNetwork
             return (DateTime.UtcNow - _startTime) + _timeOffset;
         }
 
+        public DateTime StartTime
+        {
+            get { return _startTime; }
+            internal set { _startTime = value; }
+        }
+
         void IChannelToClientZone.Init(int clientId, DateTime startTime, TimeSpan elapsedTime)
         {
             _clientId = clientId;
@@ -106,6 +115,11 @@ namespace EntityNetwork
 
             _entityMap.Remove(entityId);
             _entityFactory.Delete(entity);
+        }
+
+        IEntity IZone.GetEntity(int entityId)
+        {
+            return GetEntity(entityId);
         }
 
         void IZone.Invoke(int entityId, IInvokePayload payload)

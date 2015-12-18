@@ -43,6 +43,7 @@ GameObject:
   m_Component:
   - 224: {fileID: 22486706}
   - 114: {fileID: 11469180}
+  - 222: {fileID: 22235182}
   m_Layer: 5
   m_Name: ClientFruit
   m_TagString: Untagged
@@ -70,7 +71,7 @@ MonoBehaviour:
     m_TypeName: UnityEngine.UI.MaskableGraphic+CullStateChangedEvent, UnityEngine.UI,
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_Font: {fileID: 12800000, guid: 5fded8c9beb0efb42a6ba78ffb8ace9b, type: 3}
     m_FontSize: 14
     m_FontStyle: 0
     m_BestFit: 0
@@ -81,7 +82,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: __
+  m_Text: "\uf1fd"
 --- !u!114 &11436080
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -132,6 +133,12 @@ CanvasRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 132170}
+--- !u!222 &22235182
+CanvasRenderer:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 194088}
 --- !u!224 &22423094
 RectTransform:
   m_ObjectHideFlags: 1

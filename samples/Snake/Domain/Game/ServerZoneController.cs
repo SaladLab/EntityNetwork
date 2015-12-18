@@ -12,7 +12,7 @@ namespace Domain
         public void Start(int clientId1, int clientId2)
         {
             SpawnSnakes(clientId1, clientId2);
-            SpawnFruit();
+            SetTimerOnce(1, TimeSpan.FromSeconds(1), OnFruitSpawnTimer);
         }
 
         private void SpawnSnakes(int clientId1, int clientId2)
@@ -69,8 +69,12 @@ namespace Domain
 
         public void OnFruitDespawn(ServerFruit fruit)
         {
+            SetTimerOnce(1, TimeSpan.FromSeconds(2), OnFruitSpawnTimer);
+        }
+
+        private void OnFruitSpawnTimer(IEntity entity, int timerId)
+        {
             SpawnFruit();
-            // TODO: USE TIMER
         }
     }
 }

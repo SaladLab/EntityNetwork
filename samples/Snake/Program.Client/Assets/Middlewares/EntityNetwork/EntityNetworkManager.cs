@@ -85,6 +85,17 @@ public class EntityNetworkManager : NetworkManager
         }
     }
 
+    private void Update()
+    {
+        if (_zone != null)
+        {
+            _zone.RunAction(z =>
+            {
+                ((EntityTimerProvider)z.TimerProvider).ProcessWork();
+            });
+        }
+    }
+
     private void OnEntitySpawn(IServerEntity entity)
     {
         Debug.LogFormat("OnEntitySpawn({0})", entity.Id);

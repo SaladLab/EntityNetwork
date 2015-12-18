@@ -8,18 +8,16 @@ namespace EntityNetwork
     public class ServerZone : IServerZone, IChannelToServerZone
     {
         private readonly IServerEntityFactory _entityFactory;
-
+        private readonly EntityTimerProvider _timerProvider;
         private int _lastEntityId;
         private readonly Dictionary<int, IServerEntity> _entityMap = new Dictionary<int, IServerEntity>();
-
         private int _beginActionCount;
         private readonly HashSet<int> _changedEntitySet = new HashSet<int>();
-
         private readonly Dictionary<int, ProtobufChannelToClientZoneOutbound> _clientChannelMap =
             new Dictionary<int, ProtobufChannelToClientZoneOutbound>();
+        private DateTime _startTime;
 
-        private readonly DateTime _startTime;
-
+        public IEntityTimerProvider TimerProvider { get { return _timerProvider; } }
         public Action<IServerEntity> EntitySpawned;
         public Action<IServerEntity> EntityDespawned;
         public Action<int, int, IInvokePayload> EntityInvalidTargetInvoked;
@@ -28,6 +26,7 @@ namespace EntityNetwork
         public ServerZone(IServerEntityFactory entityFactory)
         {
             _entityFactory = entityFactory;
+            _timerProvider = new EntityTimerProvider(this);
             _startTime = DateTime.UtcNow;
         }
 
@@ -146,9 +145,20 @@ namespace EntityNetwork
             return DateTime.UtcNow - _startTime;
         }
 
+        public DateTime StartTime
+        {
+            get { return _startTime; }
+            internal set { _startTime = value; }
+        }
+
         private void OnEntityTrackableHasChangeSet(int entityId, int trackableDataIndex)
         {
             _changedEntitySet.Add(entityId);
+        }
+
+        IEntity IZone.GetEntity(int entityId)
+        {
+            return GetEntity(entityId);
         }
 
         void IZone.Invoke(int entityId, IInvokePayload payload)

@@ -5,9 +5,8 @@ namespace EntityNetwork
 {
     // TODO: Remove setter of properties
 
-    public interface IServerEntity
+    public interface IServerEntity : IEntity
     {
-        int Id { get; set; }
         Type ProtoType { get; set; }
         IServerZone Zone { get; set; }
         int OwnerId { get; set; }
@@ -24,6 +23,11 @@ namespace EntityNetwork
 
         void OnSpawn(object param);
         void OnDespawn();
+
+        void SetTimerOnce(int timerId, TimeSpan delay, Action<IEntity, int> action);
+        void SetTimerRepeatedly(int timerId, TimeSpan interval, Action<IEntity, int> action);
+        bool RemoveTimer(int timerId);
+        void RemoveTimerAll();
     }
 
     public abstract class ServerEntity : IServerEntity
@@ -59,6 +63,26 @@ namespace EntityNetwork
 
         public virtual void OnDespawn()
         {
+        }
+
+        public void SetTimerOnce(int timerId, TimeSpan delay, Action<IEntity, int> action)
+        {
+            Zone.TimerProvider.SetTimerOnce(Id, timerId, delay, action);
+        }
+
+        public void SetTimerRepeatedly(int timerId, TimeSpan interval, Action<IEntity, int> action)
+        {
+            Zone.TimerProvider.SetTimerRepeatedly(Id, timerId, interval, action);
+        }
+
+        public bool RemoveTimer(int timerId)
+        {
+            return Zone.TimerProvider.RemoveTimer(Id, timerId);
+        }
+
+        public void RemoveTimerAll()
+        {
+            Zone.TimerProvider.RemoveTimerAll(Id);
         }
 
         protected void SendInvoke(IInvokePayload payload)

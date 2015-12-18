@@ -72,6 +72,7 @@
     <Compile Include="Properties\AssemblyInfoGenerated.cs" />
     <Compile Include="ProtobufChannel.cs" />
     <Compile Include="ServerEntity.cs" />
+    <Compile Include="EntityTimerProvider.cs" />
     <Compile Include="Zone.cs" />
     <Compile Include="Payload.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

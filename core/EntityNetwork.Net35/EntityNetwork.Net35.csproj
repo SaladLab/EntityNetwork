@@ -81,6 +81,9 @@
     <Compile Include="..\EntityNetwork\EntityFactory.cs">
       <Link>EntityFactory.cs</Link>
     </Compile>
+    <Compile Include="..\EntityNetwork\EntityTimerProvider.cs">
+      <Link>EntityTimerProvider.cs</Link>
+    </Compile>
     <Compile Include="..\EntityNetwork\Payload.cs">
       <Link>Payload.cs</Link>
     </Compile>

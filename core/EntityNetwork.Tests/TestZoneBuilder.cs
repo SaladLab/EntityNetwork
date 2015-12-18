@@ -27,10 +27,13 @@ namespace EntityNetwork.Tests
         private readonly TypeAliasTable _typeTable;
         private readonly TypeModel _typeModel;
         private int _lastClientId;
+        private List<Tuple<TimeSpan, Action>> _scheduledActions = new List<Tuple<TimeSpan, Action>>();
 
         public TestZoneSet(TypeAliasTable typeTable, TypeModel typeModel)
         {
             ServerZone = new TestServerZone(EntityFactory.Default);
+            ((EntityTimerProvider)ServerZone.TimerProvider).ActionScheduled = OnActionSchedule;
+
             ClientZones = new TestClientZone[0];
             ClientZoneMap = new Dictionary<int, TestClientZone>();
 
@@ -59,6 +62,7 @@ namespace EntityNetwork.Tests
             };
 
             var clientZone = new TestClientZone(EntityFactory.Default, channelUp);
+            ((EntityTimerProvider)clientZone.TimerProvider).ActionScheduled = OnActionSchedule;
 
             var channelDown = new ProtobufChannelToClientZoneOutbound
             {
@@ -87,6 +91,37 @@ namespace EntityNetwork.Tests
 
             ServerZone.RemoveClient(clientId);
             ClientZones = ClientZoneMap.Values.ToArray();
+        }
+
+        public void UpdateTime(TimeSpan elapsedTime)
+        {
+            ServerZone.StartTime = ServerZone.StartTime - elapsedTime;
+            foreach (var clientZone in ClientZones)
+                clientZone.StartTime = clientZone.StartTime - elapsedTime;
+
+            var callActions = new List<Action>();
+            for (int i = 0; i < _scheduledActions.Count; i++)
+            {
+                var leftTime = _scheduledActions[i].Item1 - elapsedTime;
+                if (leftTime > TimeSpan.Zero)
+                {
+                    _scheduledActions[i] = Tuple.Create(leftTime, _scheduledActions[i].Item2);
+                }
+                else
+                {
+                    callActions.Add(_scheduledActions[i].Item2);
+                    _scheduledActions.RemoveAt(i);
+                    i -= 1;
+                }
+            }
+
+            foreach (var action in callActions)
+                action();
+        }
+
+        private void OnActionSchedule(TimeSpan delay, Action action)
+        {
+            _scheduledActions.Add(Tuple.Create(delay, action));
         }
     }
 

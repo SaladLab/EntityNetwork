@@ -131,6 +131,12 @@ public class EntityNetworkClient : NetworkBehaviour
         _zoneChannel.Write(bytes);
     }
 
+    private void Update()
+    {
+        if (_zone != null)
+            ((EntityTimerProvider)_zone.TimerProvider).ProcessWork();
+    }
+
     public override void OnNetworkDestroy()
     {
         Debug.LogFormat("OnNetworkDestroy()");
