@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using Akka.Interfaced;
 using DG.Tweening;
+using Domain;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +14,7 @@ public class MainScene : MonoBehaviour
     public InputField IdInput;
     public InputField PasswordInput;
     public Text LoadingText;
+    public Text DifficultyButtonText;
 
     protected void Start()
     {
@@ -59,6 +61,7 @@ public class MainScene : MonoBehaviour
         if (task.Status == TaskStatus.RanToCompletion)
         {
             SwitchPanel(LoadingPanel, MainPanel);
+            UpdateDifficultyButtonText();
 
             PlayerPrefs.SetString("LoginId", id);
             PlayerPrefs.SetString("LoginPassword", password);
@@ -98,7 +101,7 @@ public class MainScene : MonoBehaviour
         Application.LoadLevel("GameScene");
     }
 
-    public void OnInfoButtonClick()
+    public void OnDifficultyButtonClick()
     {
         if (G.User == null)
         {
@@ -106,7 +109,14 @@ public class MainScene : MonoBehaviour
             return;
         }
 
-        UiMessageBox.ShowMessageBox("Info!");
+        var next = (int)G.GameDifficulty + 1;
+        G.GameDifficulty = (next <= (int)GameDifficulty.Hard) ? (GameDifficulty)next : GameDifficulty.Easy;
+        UpdateDifficultyButtonText();
+    }
+
+    private void UpdateDifficultyButtonText()
+    {
+        DifficultyButtonText.text = "Difficulty: " + G.GameDifficulty;
     }
 
     public void OnLogoutButtonClick()

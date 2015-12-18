@@ -105,7 +105,7 @@ public class GameScene : MonoBehaviour, IUserPairingObserver, IGameObserver, IBy
 
         var observerId = G.Comm.IssueObserverId();
         G.Comm.AddObserver(observerId, new ObserverEventDispatcher(this));
-        yield return G.User.RegisterPairing(GameDifficulty.Easy, observerId).WaitHandle;
+        yield return G.User.RegisterPairing(G.GameDifficulty, observerId).WaitHandle;
 
         var startTime = DateTime.Now;
         while ((DateTime.Now - startTime).TotalSeconds < 5 && _pairedGame == null)

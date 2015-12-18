@@ -58,4 +58,6 @@ public static class G
     public static long UserId { get; set; }
 
     public static TrackableUserContext UserContext { get; set; }
+
+    public static GameDifficulty GameDifficulty { get; set; }
 }

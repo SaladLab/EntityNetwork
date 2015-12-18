@@ -552,7 +552,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Info
+  m_Text: 'Difficulty: Easy'
 --- !u!222 &403224237
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1588,7 +1588,7 @@ GameObject:
   - 114: {fileID: 1493459558}
   - 114: {fileID: 1493459557}
   m_Layer: 5
-  m_Name: InfoButton
+  m_Name: DifficultyButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
