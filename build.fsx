@@ -19,11 +19,13 @@ type Project = {
     AssemblyVersion: string;
     PackageVersion: string;
     Releases: ReleaseNotes list;
+    DefaultTarget: string;
     Dependencies: (string * string) list;
 }
 
-let emptyProject = { Name=""; Folder=""; Template=false; AssemblyVersion="";
-                     PackageVersion=""; Releases=[]; Dependencies=[] }
+let emptyProject = { Name=""; Folder=""; Template=false;
+                     AssemblyVersion=""; PackageVersion="";
+                     Releases=[]; DefaultTarget="net45"; Dependencies=[] }
 
 let decoratePrerelease v =
     let couldParse, parsedInt = System.Int32.TryParse(v)
@@ -48,6 +50,12 @@ let projects = ([
         Name="EntityNetwork.Templates";
         Folder="./core/CodeGenerator-Templates";
         Template=true;
+        Dependencies=[("EntityNetwork", "")];
+    };
+    {   emptyProject with
+        Name="EntityNetwork.Unity3D";
+        Folder="./plugins/EntityNetwork.Unity3D";
+        DefaultTarget="net35";
         Dependencies=[("EntityNetwork", "")];
     }]
     |> List.map (fun p -> 
@@ -134,7 +142,7 @@ let createNugetPackages _ =
         let nugetFile = project.Folder @@ project.Name + ".nuspec";
         let workDir = nugetWorkDir @@ project.Name;
 
-        let targets = [("", "net45"); (".Net20", "net20"); (".Net35", "net35"); (".Net40", "net40")];
+        let targets = [("", project.DefaultTarget); (".Net20", "net20"); (".Net35", "net35"); (".Net40", "net40")];
         targets |> List.iter (fun (postfix, target) ->
             let dllFileNameNet = (project.Folder + postfix) @@ "bin/Release" @@ project.Name;
             let dllFilesNet = (!! (dllFileNameNet + ".dll")

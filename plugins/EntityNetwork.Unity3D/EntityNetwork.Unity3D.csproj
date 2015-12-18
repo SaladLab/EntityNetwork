@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="EntityNetworkBehaviour.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\AssemblyInfoGenerated.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\core\EntityNetwork.Net35\EntityNetwork.Net35.csproj">
