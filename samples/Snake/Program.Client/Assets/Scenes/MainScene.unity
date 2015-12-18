@@ -1652,7 +1652,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1635158190}
-        m_MethodName: OnInfoButtonClick
+        m_MethodName: OnDifficultyButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1890,6 +1890,7 @@ MonoBehaviour:
   IdInput: {fileID: 785141438}
   PasswordInput: {fileID: 784077847}
   LoadingText: {fileID: 2143533489}
+  DifficultyButtonText: {fileID: 403224236}
 --- !u!4 &1635158191
 Transform:
   m_ObjectHideFlags: 0
