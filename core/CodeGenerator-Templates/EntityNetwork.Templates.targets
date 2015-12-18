@@ -31,7 +31,7 @@
   <!-- Code Generation Task -->
   <Target Name="EntityNetworkPreprocessing"
           AfterTargets="BeforeCompile;ResolveReferences"
-          BeforeTargets="CoreCompile"
+          BeforeTargets="CoreCompile;AkkaInterfacedPreprocessing"
           Inputs="@(Compile);@(ReferencePath)"
           Outputs="$(ProjectDir)$(IntermediateOutputPath)$(TargetName)$(TargetExt)">
     <Message Text="[EntityNetworkPreprocessing] - Project=$(ProjectName)" Importance="high"/>
