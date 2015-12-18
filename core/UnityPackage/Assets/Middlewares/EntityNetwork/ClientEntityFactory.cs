@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using EntityNetwork;
 using EntityNetwork.Unity3D;
 using UnityEngine;
@@ -14,10 +15,43 @@ public class ClientEntityFactory : IClientEntityFactory
 
     public Transform RootTransform { get; set; }
 
-    IClientEntity IClientEntityFactory.Create(Type protoTypeType)
+    private readonly ConcurrentDictionary<Type, Type> _clientEntityToProtoTypeMap =
+        new ConcurrentDictionary<Type, Type>();
+
+    Type IClientEntityFactory.GetProtoType(Type entityType)
     {
-        var resource = Resources.Load("Client" + protoTypeType.Name.Substring(1));
+        return _clientEntityToProtoTypeMap.GetOrAdd(entityType, t =>
+        {
+            var type = entityType;
+            while (type != null && type != typeof(object))
+            {
+                if (type.Name.EndsWith("ClientBase"))
+                {
+                    var typePrefix = type.Namespace.Length > 0 ? type.Namespace + "." : "";
+                    var protoType = type.Assembly.GetType(typePrefix + "I" +
+                                                          type.Name.Substring(0, type.Name.Length - 10));
+                    if (protoType != null && typeof(IEntityPrototype).IsAssignableFrom(protoType))
+                    {
+                        return protoType;
+                    }
+                }
+                type = type.BaseType;
+            }
+            return null;
+        });
+    }
+
+    IClientEntity IClientEntityFactory.Create(Type protoType)
+    {
+        var resourceName = "Client" + protoType.Name.Substring(1);
+        var resource = Resources.Load(resourceName);
+        if (resource == null)
+            throw new InvalidOperationException("Failed to load resource(" + resourceName + ")");
+
         var go = (GameObject)GameObject.Instantiate(resource);
+        if (go == null)
+            throw new InvalidOperationException("Failed to instantiate resource(" + resourceName + ")");
+
         if (RootTransform != null)
             go.transform.SetParent(RootTransform, false);
 
