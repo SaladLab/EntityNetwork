@@ -31,12 +31,19 @@ namespace CodeGen
 
             // Generate all
 
+            var hasServerOnlyAttribute = idecl.AttributeLists.GetAttribute("ServerOnlyAttribute") != null;
+
             GeneratePayloadCode(idecl, writer, methods, method2PayloadTypeNameMap,
                                 snapshotProperty, trackableProperties);
+
             GenerateServerEntityBaseCode(idecl, writer, methods, method2PayloadTypeNameMap,
                                          snapshotProperty, trackableProperties);
-            GenerateClientEntityBaseCode(idecl, writer, methods, method2PayloadTypeNameMap,
-                                         snapshotProperty, trackableProperties);
+
+            if (hasServerOnlyAttribute == false)
+            {
+                GenerateClientEntityBaseCode(idecl, writer, methods, method2PayloadTypeNameMap,
+                                             snapshotProperty, trackableProperties);
+            }
 
             writer.PopNamespace();
             writer.PopRegion();

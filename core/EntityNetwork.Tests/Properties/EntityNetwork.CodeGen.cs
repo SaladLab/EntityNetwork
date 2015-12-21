@@ -387,3 +387,93 @@ namespace EntityNetwork.Tests
 }
 
 #endregion
+
+#region IEarth
+
+namespace EntityNetwork.Tests
+{
+    [PayloadTableForEntity(typeof(IEarth))]
+    public static class IEarth_PayloadTable
+    {
+        public static Type[] GetPayloadTypes()
+        {
+            return new Type[]
+            {
+            };
+        }
+    }
+
+    public interface IEarthServerHandler : IEntityServerHandler
+    {
+    }
+
+    public abstract class EarthServerBase : EntityNetwork.Tests.TestServerEntity
+    {
+        public override int TrackableDataCount { get { return 0; } }
+
+        public override ITrackable GetTrackableData(int index)
+        {
+            return null;
+        }
+
+        public override void SetTrackableData(int index, ITrackable trackable)
+        {
+        }
+    }
+
+    public interface IEarthClientHandler : IEntityClientHandler
+    {
+    }
+
+    public abstract class EarthClientBase : EntityNetwork.Tests.TestClientEntity
+    {
+        public override int TrackableDataCount { get { return 0; } }
+
+        public override ITrackable GetTrackableData(int index)
+        {
+            return null;
+        }
+
+        public override void SetTrackableData(int index, ITrackable trackable)
+        {
+        }
+    }
+}
+
+#endregion
+
+#region IMonitor
+
+namespace EntityNetwork.Tests
+{
+    [PayloadTableForEntity(typeof(IMonitor))]
+    public static class IMonitor_PayloadTable
+    {
+        public static Type[] GetPayloadTypes()
+        {
+            return new Type[]
+            {
+            };
+        }
+    }
+
+    public interface IMonitorServerHandler : IEntityServerHandler
+    {
+    }
+
+    public abstract class MonitorServerBase : EntityNetwork.Tests.TestServerEntity
+    {
+        public override int TrackableDataCount { get { return 0; } }
+
+        public override ITrackable GetTrackableData(int index)
+        {
+            return null;
+        }
+
+        public override void SetTrackableData(int index, ITrackable trackable)
+        {
+        }
+    }
+}
+
+#endregion

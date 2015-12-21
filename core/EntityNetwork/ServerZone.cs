@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using TrackableData;
@@ -7,6 +8,9 @@ namespace EntityNetwork
 {
     public class ServerZone : IServerZone, IChannelToServerZone
     {
+        private static ConcurrentDictionary<Type, EntityFlags> _protoTypeToFlagsMap =
+            new ConcurrentDictionary<Type, EntityFlags>();
+
         private readonly IServerEntityFactory _entityFactory;
         private readonly EntityTimerProvider _timerProvider;
         private int _lastEntityId;
@@ -35,12 +39,36 @@ namespace EntityNetwork
         {
             var entityId = _lastEntityId += 1;
 
+            // combine flags with flags from attributes of prototype
+
+            if ((flags & EntityFlags.Singleton) != 0 ||
+                (flags & EntityFlags.ServerOnly) != 0)
+            {
+                throw new ArgumentException("Flags cannot have Singleton or ServerOnly by code.");
+            }
+
+            var finalFlags = flags | _protoTypeToFlagsMap.GetOrAdd(
+                protoType,
+                type => (Attribute.GetCustomAttribute(type, typeof(SingletonAttribute)) != null
+                             ? EntityFlags.Singleton
+                             : EntityFlags.Normal) |
+                        (Attribute.GetCustomAttribute(type, typeof(ServerOnlyAttribute)) != null
+                             ? EntityFlags.ServerOnly
+                             : EntityFlags.Normal));
+
             // check singleton condition
 
-            if ((flags & EntityFlags.Singleton) != 0)
+            if ((finalFlags & EntityFlags.Singleton) != 0)
             {
                 if (GetEntity(protoType) != null)
                     throw new InvalidOperationException($"Entity({protoType.Name}) should be singleton");
+            }
+
+            // check server-only condition
+
+            if ((finalFlags & EntityFlags.ServerOnly) != 0 && ownerId != 0)
+            {
+                throw new ArgumentException("ServerOnly entity cannot have an ownedId");
             }
 
             // create server entity
@@ -53,7 +81,7 @@ namespace EntityNetwork
             entity.ProtoType = protoType;
             entity.Zone = this;
             entity.OwnerId = ownerId;
-            entity.Flags = flags;
+            entity.Flags = finalFlags;
 
             _entityMap.Add(entityId, entity);
             entity.OnSpawn(param);
@@ -71,11 +99,14 @@ namespace EntityNetwork
 
             // propagate this to clients
 
-            var payload = entity.GetSpawnPayload();
-            foreach (var clientChannel in _clientChannelMap.Values)
+            if ((finalFlags & EntityFlags.ServerOnly) == 0)
             {
-                // TODO: make batch api & use it for reducing network bandwidth in UNET
-                clientChannel.Spawn(entityId, protoType, ownerId, flags, payload);
+                var payload = entity.GetSpawnPayload();
+                foreach (var clientChannel in _clientChannelMap.Values)
+                {
+                    // TODO: make batch api & use it for reducing network bandwidth in UNET
+                    clientChannel.Spawn(entityId, protoType, ownerId, finalFlags, payload);
+                }
             }
 
             return entity;
@@ -95,8 +126,11 @@ namespace EntityNetwork
 
             // propagate this to clients
 
-            foreach (var clientChannel in _clientChannelMap.Values)
-                clientChannel.Despawn(id);
+            if ((entity.Flags & EntityFlags.ServerOnly) == 0)
+            {
+                foreach (var clientChannel in _clientChannelMap.Values)
+                    clientChannel.Despawn(id);
+            }
 
             return true;
         }
@@ -225,8 +259,11 @@ namespace EntityNetwork
 
             foreach (var entity in _entityMap.Values)
             {
-                var payload = entity.GetSpawnPayload();
-                channelToClientZone.Spawn(entity.Id, entity.ProtoType, entity.OwnerId, entity.Flags, payload);
+                if ((entity.Flags & EntityFlags.ServerOnly) == 0)
+                {
+                    var payload = entity.GetSpawnPayload();
+                    channelToClientZone.Spawn(entity.Id, entity.ProtoType, entity.OwnerId, entity.Flags, payload);
+                }
             }
 
             channelToClientZone.End();

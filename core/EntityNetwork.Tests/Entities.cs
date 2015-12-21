@@ -134,4 +134,26 @@ namespace EntityNetwork.Tests
             Log($"OnHit({x}, {y})");
         }
     }
+
+    [TypeAlias, Singleton]
+    public interface IEarth : IEntityPrototype
+    {
+    }
+
+    public class ServerEarth : EarthServerBase, IEarthServerHandler
+    {
+    }
+
+    public class ClientEarth : EarthClientBase, IEarthClientHandler
+    {
+    }
+
+    [TypeAlias, ServerOnly]
+    public interface IMonitor : IEntityPrototype
+    {
+    }
+
+    public class ServerMonitor : MonitorServerBase, IMonitorServerHandler
+    {
+    }
 }

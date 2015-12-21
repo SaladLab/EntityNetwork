@@ -24,8 +24,9 @@ namespace EntityNetwork
     {
         Normal = 0,
         Singleton = 1,
-        LiveWhenOwnerGoAway = 2,
-        AnyoneCanControl = 4,
+        ServerOnly = 2,
+        LiveWhenOwnerGoAway = 4,
+        AnyoneCanControl = 8,
         // TODO: ClientCanUpdateTrackableData
     }
 }
