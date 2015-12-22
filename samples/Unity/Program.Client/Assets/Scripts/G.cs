@@ -1,8 +1,5 @@
-﻿using System.IO;
-using System.Linq;
-using System.Net;
+﻿using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
-using Akka.Interfaced.SlimSocket.Client;
 
 public static class G
 {
@@ -18,10 +15,7 @@ public static class G
     public static Communicator Comm
     {
         get { return _comm; }
-        set
-        {
-            _comm = value;
-        }
+        set { _comm = value; }
     }
 
     // Logger

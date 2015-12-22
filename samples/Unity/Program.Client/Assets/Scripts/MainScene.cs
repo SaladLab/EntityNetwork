@@ -1,15 +1,13 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
 using System.Net;
 using Akka.Interfaced;
 using Akka.Interfaced.SlimSocket.Base;
 using Akka.Interfaced.SlimSocket.Client;
 using Common.Logging;
 using Domain;
-using Domain.Entity;
 using EntityNetwork;
-using TrackableData;
 using TypeAlias;
+using UnityEngine;
 
 public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
 {
@@ -18,14 +16,14 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
     private GameClientRef _gameClient;
     private ObserverEventDispatcher _gameObserver;
 
-    void Start()
+    private void Start()
     {
-        ClientEntityFactory.Default.RootTransform = GameObject.Find("Canvas").transform;
+        ClientEntityFactory.Default.RootTransform = GameObject.Find("Entities").transform;
 
         StartCoroutine(ProcessConnectToServer());
     }
 
-    void Update()
+    private void Update()
     {
         if (_zone != null)
         {
@@ -35,7 +33,7 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
         }
     }
 
-    IEnumerator ProcessConnectToServer()
+    private IEnumerator ProcessConnectToServer()
     {
         WriteLine("Connect");
 
@@ -45,7 +43,7 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
                 new TypeAliasTable()));
 
         G.Comm = new Communicator(G.Logger, new IPEndPoint(IPAddress.Loopback, 5000),
-            _ => new TcpConnection(serializer, LogManager.GetLogger("Connection")));
+                                  _ => new TcpConnection(serializer, LogManager.GetLogger("Connection")));
         G.Comm.Start();
 
         // get user
@@ -72,9 +70,6 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
         if (t2.Status != TaskStatus.RanToCompletion)
             yield break;
 
-        // TODO: MAKE OFFICIAL
-        EntityNetworkClient.LocalClientId = t2.Result.Item2;
-
         _gameClient = new GameClientRef(
             new SlimActorRef(t2.Result.Item1),
             new SlimRequestWaiter(G.Comm, this), null);
@@ -96,12 +91,12 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
         };
     }
 
-    void WriteLine(string text)
+    private void WriteLine(string text)
     {
         Debug.Log(text);
     }
 
-    void ShowResult(Task task, string name)
+    private void ShowResult(Task task, string name)
     {
         if (task.Status == TaskStatus.RanToCompletion)
             WriteLine(string.Format("{0}: Done", name));
@@ -113,7 +108,7 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
             WriteLine(string.Format("{0}: Illegal Status = {1}", name, task.Status));
     }
 
-    void ShowResult<TResult>(Task<TResult> task, string name)
+    private void ShowResult<TResult>(Task<TResult> task, string name)
     {
         if (task.Status == TaskStatus.RanToCompletion)
             WriteLine(string.Format("{0}: Result = {1}", name, task.Result));

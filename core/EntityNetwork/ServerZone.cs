@@ -34,7 +34,7 @@ namespace EntityNetwork
             _startTime = DateTime.UtcNow;
         }
 
-        public IServerEntity Spawn(Type protoType, int ownerId, EntityFlags flags = EntityFlags.Normal,
+        public IServerEntity Spawn(Type protoType, int ownerId = 0, EntityFlags flags = EntityFlags.Normal,
                                    object param = null)
         {
             var entityId = _lastEntityId += 1;

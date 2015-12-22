@@ -1,9 +1,6 @@
-﻿using System.Collections;
-using Domain.Entity;
+﻿using Domain.Entity;
 using EntityNetwork;
-using TypeAlias;
 using UnityEngine;
-using UnityEngine.Networking;
 
 public class ClientSpaceShip : SpaceShipClientBase, ISpaceShipClientHandler
 {
@@ -12,7 +9,7 @@ public class ClientSpaceShip : SpaceShipClientBase, ISpaceShipClientHandler
 
     private void FixedUpdate()
     {
-        if (OwnerId == EntityNetworkClient.LocalClientId)
+        if (OwnerId == Zone.ClientId)
             UpdateInput();
     }
 
@@ -23,12 +20,13 @@ public class ClientSpaceShip : SpaceShipClientBase, ISpaceShipClientHandler
         if (_moveDirection != Vector2.zero)
         {
             var rt = GetComponent<RectTransform>();
-            var pos = rt.localPosition + new Vector3(_moveDirection.x, _moveDirection.y, 0) *_moveSpeed*Time.deltaTime;
+            var pos = rt.localPosition +
+                      new Vector3(_moveDirection.x, _moveDirection.y, 0) * _moveSpeed * Time.deltaTime;
             rt.localPosition = pos;
         }
     }
 
-    void UpdateInput()
+    private void UpdateInput()
     {
         var dir = Vector2.zero;
         if (Input.GetKey(KeyCode.LeftArrow))
@@ -43,10 +41,7 @@ public class ClientSpaceShip : SpaceShipClientBase, ISpaceShipClientHandler
         if (dir != _moveDirection)
         {
             var rt = GetComponent<RectTransform>();
-            ((ClientZone)Zone).RunAction(_ =>
-            {
-                Move(rt.localPosition.x, rt.localPosition.y, dir.x, dir.y);
-            });
+            ((ClientZone)Zone).RunAction(_ => { Move(rt.localPosition.x, rt.localPosition.y, dir.x, dir.y); });
             _moveDirection = dir;
         }
     }
@@ -62,7 +57,7 @@ public class ClientSpaceShip : SpaceShipClientBase, ISpaceShipClientHandler
 
     void ISpaceShipClientHandler.OnMove(float x, float y, float dx, float dy)
     {
-        if (OwnerId == EntityNetworkClient.LocalClientId)
+        if (OwnerId == Zone.ClientId)
             return;
 
         var rt = GetComponent<RectTransform>();
