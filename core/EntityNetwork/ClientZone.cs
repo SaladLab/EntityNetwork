@@ -47,6 +47,11 @@ namespace EntityNetwork
             return (T)GetEntity(protoType);
         }
 
+        public IEnumerable<int> GetEntityIds()
+        {
+            return _entityMap.Keys;
+        }
+
         public IEnumerable<IClientEntity> GetEntities()
         {
             return _entityMap.Values;

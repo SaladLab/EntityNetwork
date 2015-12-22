@@ -155,6 +155,11 @@ namespace EntityNetwork
             return (T)GetEntity(protoType);
         }
 
+        public IEnumerable<int> GetEntityIds()
+        {
+            return _entityMap.Keys;
+        }
+
         public IEnumerable<IServerEntity> GetEntities()
         {
             return _entityMap.Values;
@@ -322,6 +327,11 @@ namespace EntityNetwork
 
             EndAction();
             return true;
+        }
+
+        public IEnumerable<int> GetClientIds()
+        {
+            return _clientChannelMap.Keys;
         }
 
         public void SetEntityOwnership(int entityId, int ownerId)

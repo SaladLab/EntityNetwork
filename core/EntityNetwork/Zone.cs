@@ -18,6 +18,7 @@ namespace EntityNetwork
         new IServerEntity GetEntity(int entityId);
         IServerEntity GetEntity(Type protoType);
         T GetEntity<T>() where T : class, IServerEntity;
+        IEnumerable<int> GetEntityIds();
         IEnumerable<IServerEntity> GetEntities();
         IEnumerable<IServerEntity> GetEntities(Type protoType);
         IEnumerable<T> GetEntities<T>() where T : class, IServerEntity;
@@ -38,6 +39,7 @@ namespace EntityNetwork
         new IClientEntity GetEntity(int entityId);
         IClientEntity GetEntity(Type protoType);
         T GetEntity<T>() where T : class, IClientEntity;
+        IEnumerable<int> GetEntityIds();
         IEnumerable<IClientEntity> GetEntities();
         IEnumerable<IClientEntity> GetEntities(Type protoType);
         IEnumerable<T> GetEntities<T>() where T : class, IClientEntity;
