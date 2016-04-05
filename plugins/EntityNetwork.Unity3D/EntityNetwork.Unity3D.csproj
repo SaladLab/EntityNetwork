@@ -11,6 +11,7 @@
     <AssemblyName>EntityNetwork.Unity3D</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <CodeAnalysisRuleSet>..\..\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
@@ -40,12 +42,12 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="TrackableData, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\TrackableData.0.2.0-alpha3\lib\net35\TrackableData.dll</HintPath>
+    <Reference Include="TrackableData, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.1.1.0\lib\net35\TrackableData.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="TrackableData.Protobuf, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\TrackableData.Protobuf.0.2.0-alpha3\lib\net35\TrackableData.Protobuf.dll</HintPath>
+    <Reference Include="TrackableData.Protobuf, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.Protobuf.1.1.0\lib\net35\TrackableData.Protobuf.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="UnityEngine">
@@ -65,6 +67,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\Newtonsoft.Json.dll" />
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

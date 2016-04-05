@@ -1,12 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props" Condition="Exists('..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props')" />
+  <Import Project="..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.props" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props" Condition="Exists('$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props')" />
   <PropertyGroup>
     <EntityNetworkProtobuf>1</EntityNetworkProtobuf>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <CodeAnalysisRuleSet>..\..\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -38,6 +39,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NetLegacySupport.Action, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -61,16 +63,16 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="TrackableData, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\TrackableData.0.2.0-alpha3\lib\net45\TrackableData.dll</HintPath>
+    <Reference Include="TrackableData, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.1.1.0\lib\net45\TrackableData.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="TrackableData.Protobuf, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\TrackableData.Protobuf.0.2.0-alpha3\lib\net45\TrackableData.Protobuf.dll</HintPath>
+    <Reference Include="TrackableData.Protobuf, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\TrackableData.Protobuf.1.1.0\lib\net45\TrackableData.Protobuf.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="TypeAlias, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\TypeAlias.1.1.1\lib\net40\TypeAlias.dll</HintPath>
+      <HintPath>..\..\packages\TypeAlias.1.1.2\lib\net40\TypeAlias.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -94,16 +96,21 @@
       <Name>EntityNetwork</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\Newtonsoft.Json.dll" />
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.targets" Condition="Exists('$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.props'))" />
-    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets'))" />
+    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.props'))" />
+    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.targets'))" />
   </Target>
-  <Import Project="..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets" Condition="Exists('..\..\packages\TrackableData.Templates.0.2.0-alpha3\build\TrackableData.Templates.targets')" />
+  <Import Project="..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.targets" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.1\build\TrackableData.Templates.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

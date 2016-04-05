@@ -146,7 +146,8 @@ namespace EntityNetwork
             return _entityMap.Values.FirstOrDefault(e => e.ProtoType == protoType);
         }
 
-        public T GetEntity<T>() where T : class, IServerEntity
+        public T GetEntity<T>()
+            where T : class, IServerEntity
         {
             var protoType = _entityFactory.GetProtoType(typeof(T));
             if (protoType == null)
@@ -170,7 +171,8 @@ namespace EntityNetwork
             return _entityMap.Values.Where(e => e.ProtoType == protoType);
         }
 
-        public IEnumerable<T> GetEntities<T>() where T : class, IServerEntity
+        public IEnumerable<T> GetEntities<T>()
+            where T : class, IServerEntity
         {
             var protoType = _entityFactory.GetProtoType(typeof(T));
             if (protoType == null)
@@ -216,7 +218,7 @@ namespace EntityNetwork
             }
 
             // Check Ownership
-            if (((serverEntity.Flags & EntityFlags.AnyoneCanControl) == 0) && 
+            if (((serverEntity.Flags & EntityFlags.AnyoneCanControl) == 0) &&
                 ((payload.Flags & PayloadFlags.AnyoneCanCall) == 0) &&
                 serverEntity.OwnerId != clientId)
             {

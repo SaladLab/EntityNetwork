@@ -38,7 +38,8 @@ namespace EntityNetwork
             return _entityMap.Values.FirstOrDefault(e => e.ProtoType == protoType);
         }
 
-        public T GetEntity<T>() where T : class, IClientEntity
+        public T GetEntity<T>()
+            where T : class, IClientEntity
         {
             var protoType = _entityFactory.GetProtoType(typeof(T));
             if (protoType == null)
@@ -62,7 +63,8 @@ namespace EntityNetwork
             return _entityMap.Values.Where(e => e.ProtoType == protoType);
         }
 
-        public IEnumerable<T> GetEntities<T>() where T : class, IClientEntity
+        public IEnumerable<T> GetEntities<T>()
+            where T : class, IClientEntity
         {
             var protoType = _entityFactory.GetProtoType(typeof(T));
             if (protoType == null)

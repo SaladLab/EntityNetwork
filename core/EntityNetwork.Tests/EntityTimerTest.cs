@@ -8,7 +8,7 @@ namespace EntityNetwork.Tests
     public class EntityTimerTest
     {
         [Fact]
-        void ServerEntity_SetTimerOnce()
+        private void ServerEntity_SetTimerOnce()
         {
             // Arrange
 
@@ -30,7 +30,7 @@ namespace EntityNetwork.Tests
         }
 
         [Fact]
-        void ServerEntity_SetTimerRepeatedly()
+        private void ServerEntity_SetTimerRepeatedly()
         {
             // Arrange
 
@@ -56,7 +56,7 @@ namespace EntityNetwork.Tests
         }
 
         [Fact]
-        void ServerEntity_RemoveTimer()
+        private void ServerEntity_RemoveTimer()
         {
             // Arrange
 
@@ -85,7 +85,7 @@ namespace EntityNetwork.Tests
         }
 
         [Fact]
-        void ServerEntity_RemoveTimerAll()
+        private void ServerEntity_RemoveTimerAll()
         {
             // Arrange
 

@@ -16,9 +16,9 @@ using TypeAlias;
 
 namespace Unity.Program.Server
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             if (typeof(IUser) == null)
                 throw new Exception("Force interface module to be loaded");

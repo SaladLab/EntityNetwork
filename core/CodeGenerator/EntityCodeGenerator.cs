@@ -129,7 +129,7 @@ namespace CodeGen
                 var hasToServerAttribute = method.AttributeLists.GetAttribute("ToServerAttribute") != null;
                 var hasAnyoneCanCallAttribute = method.AttributeLists.GetAttribute("AnyoneCanCallAttribute") != null;
 
-                var flags = new List<String>();
+                var flags = new List<string>();
                 if (hasPassThroughAttribute)
                     flags.Add("PayloadFlags.PassThrough");
                 if (hasToClientAttribute)
@@ -416,7 +416,7 @@ namespace CodeGen
             sb.AppendLine();
             sb.Append("\tpublic override ITrackable GetTrackableData(int index)\n");
             sb.Append("\t{\n");
-            for (int i=0; i<trackableProperties.Length; i++)
+            for (int i = 0; i < trackableProperties.Length; i++)
             {
                 sb.Append($"\t\tif (index == {i}) return {trackableProperties[i].Identifier};\n");
             }

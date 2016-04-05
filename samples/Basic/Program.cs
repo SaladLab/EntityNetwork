@@ -10,7 +10,7 @@ using TypeAlias;
 
 namespace Basic
 {
-    class DummyChannelToServerZoneInbound : IByteChannel
+    internal class DummyChannelToServerZoneInbound : IByteChannel
     {
         public ProtobufChannelToServerZoneInbound Channel;
 
@@ -20,9 +20,9 @@ namespace Basic
         }
     }
 
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var typeTable = new TypeAliasTable();
 
@@ -30,7 +30,7 @@ namespace Basic
             typeModel.Add(typeof(TrackablePocoTracker<ISpaceShipData>), false)
                      .SetSurrogate(typeof(TrackableSpaceShipDataTrackerSurrogate));
 
-            var serverZone =  new ServerZone(EntityFactory.Default);
+            var serverZone = new ServerZone(EntityFactory.Default);
 
             var clientZones = Enumerable.Range(0, 2).Select(i =>
             {

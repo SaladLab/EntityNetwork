@@ -31,7 +31,7 @@ namespace EntityNetwork
         private readonly Dictionary<Type, Tuple<Type, Type>> _entityTypeMap =
             new Dictionary<Type, Tuple<Type, Type>>();
 
-        private readonly ConcurrentDictionary<Type, Type> _serverEntityToProtoTypeMap = 
+        private readonly ConcurrentDictionary<Type, Type> _serverEntityToProtoTypeMap =
             new ConcurrentDictionary<Type, Type>();
 
         private readonly ConcurrentDictionary<Type, Type> _clientEntityToProtoTypeMap =

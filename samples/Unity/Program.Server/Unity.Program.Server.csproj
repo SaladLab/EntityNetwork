@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <CodeAnalysisRuleSet>..\..\..\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -31,10 +32,11 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Akka, Version=1.0.5.14, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Akka.1.0.5\lib\net45\Akka.dll</HintPath>
+    <Reference Include="Akka, Version=1.0.6.16, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Akka.1.0.6\lib\net45\Akka.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Interfaced, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -77,8 +79,8 @@
       <HintPath>..\..\..\packages\NetLegacySupport.ConcurrentDictionary.1.1.0\lib\net40\NetLegacySupport.ConcurrentDictionary.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
@@ -98,7 +100,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="TypeAlias, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\TypeAlias.1.1.1\lib\net40\TypeAlias.dll</HintPath>
+      <HintPath>..\..\..\packages\TypeAlias.1.1.2\lib\net40\TypeAlias.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -121,6 +123,11 @@
       <Project>{8bc6e409-057f-44c5-a968-16b614c8fba6}</Project>
       <Name>Unity.Domain</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\Newtonsoft.Json.dll" />
+    <Analyzer Include="..\..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

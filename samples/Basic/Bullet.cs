@@ -9,7 +9,7 @@ namespace Basic
             Console.WriteLine($"Bullet({Id}).Hit({x}, {y})");
         }
     }
-    
+
     public class ClientBullet : BulletClientBase, IBulletClientHandler
     {
         public void OnHit(float x = 0, float y = 0)
