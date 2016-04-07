@@ -7,8 +7,8 @@
     <authors>Esun Kim</authors>
     <owners>Esun Kim</owners>
     <description>EntityNetwork for Unity3D</description>
-    <licenseUrl>https://raw.githubusercontent.com/SaladbowlCreative/EntityNetwork/master/LICENSE</licenseUrl>
-    <projectUrl>https://github.com/SaladbowlCreative/EntityNetwork</projectUrl>
+    <licenseUrl>https://raw.githubusercontent.com/SaladLab/EntityNetwork/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/SaladLab/EntityNetwork</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <releaseNotes>@releaseNotes@</releaseNotes>
     <copyright>Copyright © 2016 SaladLab</copyright>
