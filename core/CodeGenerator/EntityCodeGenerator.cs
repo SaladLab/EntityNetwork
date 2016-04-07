@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using CodeWriter;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace CodeGen
@@ -11,13 +11,18 @@ namespace CodeGen
     {
         public Options Options { get; set; }
 
-        public void GenerateCode(InterfaceDeclarationSyntax idecl, ICodeGenWriter writer)
+        public void GenerateCode(InterfaceDeclarationSyntax idecl, CodeWriter.CodeWriter w)
         {
             var iname = idecl.Identifier.ToString();
             Console.WriteLine("GenerateCode: " + iname);
 
-            writer.PushRegion(iname);
-            writer.PushNamespace(idecl.GetNamespaceScope());
+            w._($"#region {iname}");
+            w._();
+
+            var namespaceScope = idecl.GetNamespaceScope();
+            var namespaceHandle = (string.IsNullOrEmpty(namespaceScope) == false)
+                                      ? w.B($"namespace {idecl.GetNamespaceScope()}")
+                                      : null;
 
             // Collect all methods and make payload type name for each one
 
@@ -33,335 +38,309 @@ namespace CodeGen
 
             var hasServerOnlyAttribute = idecl.AttributeLists.GetAttribute("ServerOnlyAttribute") != null;
 
-            GeneratePayloadCode(idecl, writer, methods, method2PayloadTypeNameMap,
+            GeneratePayloadCode(idecl, w, methods, method2PayloadTypeNameMap,
                                 snapshotProperty, trackableProperties);
 
-            GenerateServerEntityBaseCode(idecl, writer, methods, method2PayloadTypeNameMap,
+            GenerateServerEntityBaseCode(idecl, w, methods, method2PayloadTypeNameMap,
                                          snapshotProperty, trackableProperties);
 
             if (hasServerOnlyAttribute == false)
             {
-                GenerateClientEntityBaseCode(idecl, writer, methods, method2PayloadTypeNameMap,
+                GenerateClientEntityBaseCode(idecl, w, methods, method2PayloadTypeNameMap,
                                              snapshotProperty, trackableProperties);
             }
 
-            writer.PopNamespace();
-            writer.PopRegion();
+            namespaceHandle?.Dispose();
+
+            w._();
+            w._($"#endregion");
         }
 
         private void GeneratePayloadCode(
-            InterfaceDeclarationSyntax idecl, ICodeGenWriter writer,
+            InterfaceDeclarationSyntax idecl, CodeWriter.CodeWriter w,
             MethodDeclarationSyntax[] methods, Dictionary<MethodDeclarationSyntax, string> method2PayloadTypeNameMap,
             PropertyDeclarationSyntax snapshotProperty, PropertyDeclarationSyntax[] trackableProperties)
         {
-            var sb = new StringBuilder();
             var className = Utility.GetPayloadTableClassName(idecl);
 
-            sb.Append($"[PayloadTableForEntity(typeof({idecl.Identifier}))]\n");
-            sb.Append($"public static class {className}\n");
-            sb.Append("{\n");
-
-            // generate GetPayloadTypes method
-
-            sb.Append("\tpublic static Type[] GetPayloadTypes()\n");
-            sb.Append("\t{\n");
-            sb.Append("\t\treturn new Type[]\n");
-            sb.Append("\t\t{\n");
-
-            foreach (var method in methods)
+            w._($"[PayloadTableForEntity(typeof({idecl.Identifier}))]");
+            using (w.B($"public static class {className}"))
             {
-                var typeName = method2PayloadTypeNameMap[method];
-                sb.Append($"\t\t\ttypeof({typeName}),\n");
-            }
+                // generate GetPayloadTypes method
 
-            sb.Append("\t\t};\n");
-            sb.Append("\t}\n");
-
-            // generate payload classes for all methods
-
-            foreach (var method in methods)
-            {
-                var payloadTypeName = method2PayloadTypeNameMap[method];
-
-                sb.AppendLine();
-
-                if (Options.UseProtobuf)
-                    sb.Append("\t[ProtoContract, TypeAlias]\n");
-
-                sb.AppendFormat("\tpublic class {0} : IInvokePayload\n", payloadTypeName);
-                sb.Append("\t{\n");
-
-                // Parameters
-
-                var parameters = method.ParameterList.Parameters;
-                for (var i = 0; i < parameters.Count; i++)
+                using (w.B("public static Type[] GetPayloadTypes()"))
                 {
-                    var parameter = parameters[i];
-
-                    var attr = "";
-                    var defaultValueExpression = "";
-
-                    if (Options.UseProtobuf)
+                    using (w.I("return new Type[] {", "};"))
                     {
-                        var defaultValueAttr =
-                            parameter.Default != null
-                                ? $", DefaultValue({parameter.Default.Value})"
-                                : "";
-                        attr = $"[ProtoMember({i + 1}){defaultValueAttr}] ";
-
-                        if (parameter.Default != null)
-                        {
-                            defaultValueExpression = " " + parameter.Default;
-                        }
+                        foreach (var method in methods)
+                            w._($"typeof({method2PayloadTypeNameMap[method]}),");
                     }
-
-                    var typeName = parameter.Type;
-                    sb.Append($"\t\t{attr}public {typeName} {parameter.Identifier}{defaultValueExpression};\n");
                 }
 
-                if (parameters.Count > 0)
-                    sb.AppendLine();
+                // generate payload classes for all methods
 
-                // Flags
+                foreach (var method in methods)
+                {
+                    var payloadTypeName = method2PayloadTypeNameMap[method];
 
-                var hasPassThroughAttribute = method.AttributeLists.GetAttribute("PassThroughAttribute") != null;
-                var hasToClientAttribute = method.AttributeLists.GetAttribute("ToClientAttribute") != null;
-                var hasToServerAttribute = method.AttributeLists.GetAttribute("ToServerAttribute") != null;
-                var hasAnyoneCanCallAttribute = method.AttributeLists.GetAttribute("AnyoneCanCallAttribute") != null;
+                    if (Options.UseProtobuf)
+                        w._("[ProtoContract, TypeAlias]");
 
-                var flags = new List<string>();
-                if (hasPassThroughAttribute)
-                    flags.Add("PayloadFlags.PassThrough");
-                if (hasToClientAttribute)
-                    flags.Add("PayloadFlags.ToServer");
-                if (hasToServerAttribute)
-                    flags.Add("PayloadFlags.ToClient");
-                if (hasAnyoneCanCallAttribute)
-                    flags.Add("PayloadFlags.AnyoneCanCall");
-                if (flags.Count == 0)
-                    flags.Add("0");
-                sb.Append($"\t\tpublic PayloadFlags Flags {{ get {{ return {string.Join(" | ", flags)}; }} }}\n");
-                sb.AppendLine();
+                    using (w.B($"public class {payloadTypeName} : IInvokePayload"))
+                    {
+                        // Parameters
 
-                // GetInterfaceType
+                        var parameters = method.ParameterList.Parameters;
+                        for (var i = 0; i < parameters.Count; i++)
+                        {
+                            var parameter = parameters[i];
 
-                var excludeServer = hasToClientAttribute || hasPassThroughAttribute;
-                var excludeClient = hasToServerAttribute;
-                var interfaceBodyName = idecl.Identifier.ToString().Substring(1);
+                            var attr = "";
+                            var defaultValueExpression = "";
 
-                /*
-                sb.Append($"\t\tpublic Type GetInterfaceType() {{ return typeof({idecl.Identifier}); }}\n");
-                if (excludeServer)
-                    sb.Append($"\t\tpublic Type GetServerInterfaceType() {{ return null; }}\n");
-                else
-                    sb.Append($"\t\tpublic Type GetServerInterfaceType() {{ return typeof(IServer{interfaceBodyName}); }}\n");
-                if (excludeClient)
-                    sb.Append($"\t\tpublic Type GetClientInterfaceType() {{ return null; }}\n");
-                else
-                    sb.Append($"\t\tpublic Type GetClientInterfaceType() {{ return typeof(IClient{interfaceBodyName}); }}\n");
-                sb.AppendLine();
-                */
+                            if (Options.UseProtobuf)
+                            {
+                                var defaultValueAttr =
+                                    parameter.Default != null
+                                        ? $", DefaultValue({parameter.Default.Value})"
+                                        : "";
+                                attr = $"[ProtoMember({i + 1}){defaultValueAttr}] ";
 
-                // Invoke
+                                if (parameter.Default != null)
+                                {
+                                    defaultValueExpression = " " + parameter.Default;
+                                }
+                            }
 
-                var parameterNames = string.Join(", ", parameters.Select(p => p.Identifier));
+                            var typeName = parameter.Type;
+                            w._($"{attr}public {typeName} {parameter.Identifier}{defaultValueExpression};");
+                        }
 
-                sb.Append("\t\tpublic void InvokeServer(IEntityServerHandler target)\n");
-                sb.Append("\t\t{\n");
-                if (excludeServer == false)
-                    sb.AppendFormat("\t\t\t((I{0}ServerHandler)target).On{1}({2});\n", interfaceBodyName, method.Identifier, parameterNames);
-                sb.Append("\t\t}\n");
-                sb.AppendLine();
+                        if (parameters.Any())
+                            w._();
 
-                sb.Append("\t\tpublic void InvokeClient(IEntityClientHandler target)\n");
-                sb.Append("\t\t{\n");
-                if (excludeClient == false)
-                    sb.AppendFormat("\t\t\t((I{0}ClientHandler)target).On{1}({2});\n", interfaceBodyName, method.Identifier, parameterNames);
-                sb.Append("\t\t}\n");
+                        // Flags
 
-                sb.Append("\t}\n");
+                        var hasPassThroughAttribute = method.AttributeLists.GetAttribute("PassThroughAttribute") != null;
+                        var hasToClientAttribute = method.AttributeLists.GetAttribute("ToClientAttribute") != null;
+                        var hasToServerAttribute = method.AttributeLists.GetAttribute("ToServerAttribute") != null;
+                        var hasAnyoneCanCallAttribute = method.AttributeLists.GetAttribute("AnyoneCanCallAttribute") != null;
+
+                        var flags = new List<string>();
+                        if (hasPassThroughAttribute)
+                            flags.Add("PayloadFlags.PassThrough");
+                        if (hasToClientAttribute)
+                            flags.Add("PayloadFlags.ToServer");
+                        if (hasToServerAttribute)
+                            flags.Add("PayloadFlags.ToClient");
+                        if (hasAnyoneCanCallAttribute)
+                            flags.Add("PayloadFlags.AnyoneCanCall");
+                        if (flags.Count == 0)
+                            flags.Add("0");
+                        w._($"public PayloadFlags Flags {{ get {{ return {string.Join(" | ", flags)}; }} }}");
+                        w._();
+
+                        // GetInterfaceType
+
+                        var excludeServer = hasToClientAttribute || hasPassThroughAttribute;
+                        var excludeClient = hasToServerAttribute;
+                        var interfaceBodyName = idecl.Identifier.ToString().Substring(1);
+
+                        /*
+                        w._($"public Type GetInterfaceType() {{ return typeof({idecl.Identifier}); }}");
+                        if (excludeServer)
+                            w._($"public Type GetServerInterfaceType() {{ return null; }}");
+                        else
+                            w._($"public Type GetServerInterfaceType() {{ return typeof(IServer{interfaceBodyName}); }}");
+                        if (excludeClient)
+                            w._($"public Type GetClientInterfaceType() {{ return null; }}");
+                        else
+                            w._($"public Type GetClientInterfaceType() {{ return typeof(IClient{interfaceBodyName}); }}");
+                        sb.AppendLine();
+                        */
+
+                        // Invoke
+
+                        var parameterNames = string.Join(", ", parameters.Select(p => p.Identifier));
+
+                        using (w.B("public void InvokeServer(IEntityServerHandler target)"))
+                        {
+                            if (excludeServer == false)
+                                w._($"((I{interfaceBodyName}ServerHandler)target).On{method.Identifier}({parameterNames});");
+                        }
+
+                        using (w.B("public void InvokeClient(IEntityClientHandler target)"))
+                        {
+                            if (excludeClient == false)
+                                w._($"((I{interfaceBodyName}ClientHandler)target).On{method.Identifier}({parameterNames});");
+                        }
+                    }
+                }
+
+                // generate a payload class for spawn
+
+                if (snapshotProperty != null || (trackableProperties != null && trackableProperties.Length > 0))
+                {
+                    GeneratePayloadCodeForSpawn(idecl, w, snapshotProperty, trackableProperties);
+                }
+
+                // generate a payload class for update-change
+
+                if (trackableProperties != null && trackableProperties.Length > 0)
+                {
+                    GeneratePayloadCodeForUpdateChange(idecl, w, trackableProperties);
+                }
             }
-
-            // generate a payload class for spawn
-
-            if (snapshotProperty != null || (trackableProperties != null && trackableProperties.Length > 0))
-            {
-                sb.AppendLine();
-                GeneratePayloadCodeForSpawn(idecl, sb, snapshotProperty, trackableProperties);
-            }
-
-            // generate a payload class for update-change
-
-            if (trackableProperties != null && trackableProperties.Length > 0)
-            {
-                sb.AppendLine();
-                GeneratePayloadCodeForUpdateChange(idecl, sb, trackableProperties);
-            }
-
-            sb.Append("}");
-
-            writer.AddCode(sb.ToString());
         }
 
         private void GeneratePayloadCodeForSpawn(
-            InterfaceDeclarationSyntax idecl, StringBuilder sb,
+            InterfaceDeclarationSyntax idecl, CodeWriter.CodeWriter w,
             PropertyDeclarationSyntax snapshotProperty, PropertyDeclarationSyntax[] trackableProperties)
         {
             if (Options.UseProtobuf)
-                sb.Append("\t[ProtoContract, TypeAlias]\n");
+                w._("[ProtoContract, TypeAlias]");
 
-            sb.AppendFormat("\tpublic class Spawn : ISpawnPayload\n");
-            sb.Append("\t{\n");
-
-            // Members
-
-            var protobufMemberIndex = 0;
-
-            if (trackableProperties != null)
+            using (w.B("public class Spawn : ISpawnPayload"))
             {
-                foreach (var p in trackableProperties)
+                // Members
+
+                var protobufMemberIndex = 0;
+
+                if (trackableProperties != null)
                 {
-                    sb.Append("\t\t");
+                    foreach (var p in trackableProperties)
+                    {
+                        var attr = "";
+                        if (Options.UseProtobuf)
+                        {
+                            protobufMemberIndex += 1;
+                            attr = $"[ProtoMember({protobufMemberIndex})] ";
+                        }
+
+                        w._($"{attr}public Trackable{p.Type.ToString().Substring(1)} {p.Identifier};");
+                    }
+                }
+
+                if (snapshotProperty != null)
+                {
+                    var attr = "";
                     if (Options.UseProtobuf)
                     {
                         protobufMemberIndex += 1;
-                        sb.Append($"[ProtoMember({protobufMemberIndex})] ");
+                        attr = $"[ProtoMember({protobufMemberIndex})] ";
                     }
 
-                    sb.Append($"public Trackable{p.Type.ToString().Substring(1)} {p.Identifier};\n");
+                    w._($"{attr}public {snapshotProperty.Type} {snapshotProperty.Identifier};");
                 }
-            }
 
-            if (snapshotProperty != null)
-            {
-                sb.Append("\t\t");
-                if (Options.UseProtobuf)
+                w._();
+
+                // Notify
+
+                using (w.B("public void Gather(IServerEntity entity)"))
                 {
-                    protobufMemberIndex += 1;
-                    sb.Append($"[ProtoMember({protobufMemberIndex})] ");
+                    w._($"var e = ({Utility.GetServerEntityBaseClassName(idecl)})entity;");
+
+                    if (trackableProperties != null)
+                    {
+                        foreach (var p in trackableProperties)
+                        {
+                            w._($"{p.Identifier} = e.{p.Identifier};");
+                        }
+                    }
+
+                    if (snapshotProperty != null)
+                    {
+                        w._($"{snapshotProperty.Identifier} = e.OnSnapshot();");
+                    }
                 }
 
-                sb.Append($"public {snapshotProperty.Type} {snapshotProperty.Identifier};\n");
-            }
+                // Gather
 
-            // Notify
-
-            sb.AppendLine();
-            sb.Append("\t\tpublic void Gather(IServerEntity entity)\n");
-            sb.Append("\t\t{\n");
-            sb.Append($"\t\t\tvar e = ({Utility.GetServerEntityBaseClassName(idecl)})entity;\n");
-
-            if (trackableProperties != null)
-            {
-                foreach (var p in trackableProperties)
+                using (w.B("public void Notify(IClientEntity entity)"))
                 {
-                    sb.Append($"\t\t\t{p.Identifier} = e.{p.Identifier};\n");
+                    w._($"var e = ({Utility.GetClientEntityBaseClassName(idecl)})entity;");
+
+                    if (trackableProperties != null)
+                    {
+                        foreach (var p in trackableProperties)
+                            w._($"e.{p.Identifier} = {p.Identifier};");
+                    }
+
+                    if (snapshotProperty != null)
+                        w._($"e.OnSnapshot({snapshotProperty.Identifier});");
                 }
             }
-
-            if (snapshotProperty != null)
-            {
-                sb.Append($"\t\t\t{snapshotProperty.Identifier} = e.OnSnapshot();\n");
-            }
-
-            sb.Append("\t\t}\n");
-
-            // Gather
-
-            sb.AppendLine();
-            sb.Append("\t\tpublic void Notify(IClientEntity entity)\n");
-            sb.Append("\t\t{\n");
-            sb.Append($"\t\t\tvar e = ({Utility.GetClientEntityBaseClassName(idecl)})entity;\n");
-
-            if (trackableProperties != null)
-            {
-                foreach (var p in trackableProperties)
-                {
-                    sb.Append($"\t\t\te.{p.Identifier} = {p.Identifier};\n");
-                }
-            }
-
-            if (snapshotProperty != null)
-            {
-                sb.Append($"\t\t\te.OnSnapshot({snapshotProperty.Identifier});\n");
-            }
-
-            sb.Append("\t\t}\n");
-
-            sb.Append("\t}\n");
         }
 
         private void GeneratePayloadCodeForUpdateChange(
-            InterfaceDeclarationSyntax idecl, StringBuilder sb,
+            InterfaceDeclarationSyntax idecl, CodeWriter.CodeWriter w,
             PropertyDeclarationSyntax[] trackableProperties)
         {
             if (Options.UseProtobuf)
-                sb.Append("\t[ProtoContract, TypeAlias]\n");
+                w._("[ProtoContract, TypeAlias]");
 
-            sb.AppendFormat("\tpublic class UpdateChange : IUpdateChangePayload\n");
-            sb.Append("\t{\n");
-
-            // Members
-
-            var protobufMemberIndex = 0;
-            foreach (var p in trackableProperties)
+            using (w.B("public class UpdateChange : IUpdateChangePayload"))
             {
-                sb.Append("\t\t");
-                if (Options.UseProtobuf)
+                // Members
+
+                var protobufMemberIndex = 0;
+                foreach (var p in trackableProperties)
                 {
-                    protobufMemberIndex += 1;
-                    sb.Append($"[ProtoMember({protobufMemberIndex})] ");
+                    var attr = "";
+                    if (Options.UseProtobuf)
+                    {
+                        protobufMemberIndex += 1;
+                        attr = $"[ProtoMember({protobufMemberIndex})] ";
+                    }
+
+                    w._($"{attr}public {Utility.GetTrackerClassName(p.Type)} {p.Identifier}Tracker;");
                 }
 
-                sb.Append($"public {Utility.GetTrackerClassName(p.Type)} {p.Identifier}Tracker;\n");
+                w._();
+
+                // Gather
+
+                using (w.B("public void Gather(IServerEntity entity)"))
+                {
+                    w._($"var e = ({Utility.GetServerEntityBaseClassName(idecl)})entity;");
+
+                    foreach (var p in trackableProperties)
+                    {
+                        using (w.b($"if (e.{p.Identifier}.Changed)"))
+                        {
+                            w._($"{p.Identifier}Tracker = ({Utility.GetTrackerClassName(p.Type)})e.{p.Identifier}.Tracker;");
+                        }
+                    }
+                }
+
+                // Notify
+
+                using (w.B("public void Notify(IClientEntity entity)"))
+                {
+                    w._($"var e = ({Utility.GetClientEntityBaseClassName(idecl)})entity;");
+
+                    for (int i = 0; i < trackableProperties.Length; i++)
+                    {
+                        var p = trackableProperties[i];
+                        using (w.b($"if ({p.Identifier}Tracker != null)"))
+                        {
+                            w._($"e.OnTrackableDataChanging({i}, {p.Identifier}Tracker);");
+                            w._($"{p.Identifier}Tracker.ApplyTo(e.{p.Identifier});");
+                            w._($"e.OnTrackableDataChanged({i}, {p.Identifier}Tracker);");
+                        }
+                    }
+                }
             }
-
-            // Gather
-
-            sb.AppendLine();
-            sb.Append("\t\tpublic void Gather(IServerEntity entity)\n");
-            sb.Append("\t\t{\n");
-            sb.Append($"\t\t\tvar e = ({Utility.GetServerEntityBaseClassName(idecl)})entity;\n");
-
-            foreach (var p in trackableProperties)
-            {
-                sb.Append($"\t\t\tif (e.{p.Identifier}.Changed)\n");
-                sb.Append($"\t\t\t\t{p.Identifier}Tracker = ({Utility.GetTrackerClassName(p.Type)})e.{p.Identifier}.Tracker;\n");
-            }
-
-            sb.Append("\t\t}\n");
-
-            // Notify
-
-            sb.AppendLine();
-            sb.Append("\t\tpublic void Notify(IClientEntity entity)\n");
-            sb.Append("\t\t{\n");
-            sb.Append($"\t\t\tvar e = ({Utility.GetClientEntityBaseClassName(idecl)})entity;\n");
-
-            for (int i = 0; i < trackableProperties.Length; i++)
-            {
-                var p = trackableProperties[i];
-                sb.Append($"\t\t\tif ({p.Identifier}Tracker != null)\n");
-                sb.Append("\t\t\t{\n");
-                sb.Append($"\t\t\t\te.OnTrackableDataChanging({i}, {p.Identifier}Tracker);\n");
-                sb.Append($"\t\t\t\t{p.Identifier}Tracker.ApplyTo(e.{p.Identifier});\n");
-                sb.Append($"\t\t\t\te.OnTrackableDataChanged({i}, {p.Identifier}Tracker);\n");
-                sb.Append("\t\t\t}\n");
-            }
-
-            sb.Append("\t\t}\n");
-
-            sb.Append("\t}\n");
         }
 
         private void GenerateServerEntityBaseCode(
-            InterfaceDeclarationSyntax idecl, ICodeGenWriter writer,
+            InterfaceDeclarationSyntax idecl, CodeWriter.CodeWriter w,
             MethodDeclarationSyntax[] methods, Dictionary<MethodDeclarationSyntax, string> method2PayloadTypeNameMap,
             PropertyDeclarationSyntax snapshotProperty, PropertyDeclarationSyntax[] trackableProperties)
         {
             var payloadTableClassName = Utility.GetPayloadTableClassName(idecl);
 
-            var sb = new StringBuilder();
             var interfaceName = "I" + idecl.Identifier.ToString().Substring(1) + "ServerHandler";
             var baseClassName = Utility.GetServerEntityBaseClassName(idecl);
 
@@ -371,117 +350,102 @@ namespace CodeGen
                 m => m.AttributeLists.GetAttribute("PassThroughAttribute") == null &&
                      m.AttributeLists.GetAttribute("ToClientAttribute") == null).ToArray();
 
-            sb.Append($"public interface {interfaceName} : IEntityServerHandler\n");
-            sb.Append("{\n");
-            foreach (var method in interfaceMethods)
+            using (w.B($"public interface {interfaceName} : IEntityServerHandler"))
             {
-                sb.Append("\t" + method.ReturnType + " On" + method.Identifier + method.ParameterList + ";\n");
+                foreach (var method in interfaceMethods)
+                {
+                    w._($"{method.ReturnType} On{method.Identifier}{method.ParameterList};");
+                }
             }
-            sb.Append("}\n");
-            sb.AppendLine();
 
             // ServerEntityBase class
 
-            sb.Append($"public abstract class {baseClassName} : {Options.ServerEntity ?? "ServerEntity"}\n");
-            sb.Append("{");
-
-            if (trackableProperties.Length > 0)
+            using (w.B($"public abstract class {baseClassName} : {Options.ServerEntity ?? "ServerEntity"}"))
             {
-                sb.AppendLine();
-                foreach (var property in trackableProperties)
+                if (trackableProperties.Length > 0)
                 {
-                    sb.Append($"\tpublic Trackable{property.Type.ToString().Substring(1)} {property.Identifier} {{ get; set; }}\n");
-                }
-                sb.AppendLine();
+                    foreach (var property in trackableProperties)
+                        w._($"public Trackable{property.Type.ToString().Substring(1)} {property.Identifier} {{ get; set; }}");
 
-                sb.Append($"\tprotected {baseClassName}()\n");
-                sb.Append("\t{\n");
-                foreach (var property in trackableProperties)
+                    w._();
+
+                    using (w.B($"protected {baseClassName}()"))
+                    {
+                        foreach (var property in trackableProperties)
+                            w._($"{property.Identifier} = new Trackable{property.Type.ToString().Substring(1)}();");
+                    }
+                }
+
+                if (snapshotProperty != null)
                 {
-                    sb.Append($"\t\t{property.Identifier} = new Trackable{property.Type.ToString().Substring(1)}();\n");
+                    w._($"public override object Snapshot {{ get {{ return OnSnapshot(); }} }}");
+                    w._();
+                    w._($"public abstract {snapshotProperty.Type} OnSnapshot();");
+                    w._();
                 }
-                sb.Append("\t}\n");
+
+                w._($"public override int TrackableDataCount {{ get {{ return {trackableProperties.Length}; }} }}");
+                w._();
+
+                using (w.B("public override ITrackable GetTrackableData(int index)"))
+                {
+                    for (int i = 0; i < trackableProperties.Length; i++)
+                        w._($"if (index == {i}) return {trackableProperties[i].Identifier};");
+
+                    w._("return null;");
+                }
+
+                using (w.B("public override void SetTrackableData(int index, ITrackable trackable)"))
+                {
+                    for (int i = 0; i < trackableProperties.Length; i++)
+                    {
+                        w._($"if (index == {i}) {trackableProperties[i].Identifier} = " +
+                            $"(Trackable{trackableProperties[i].Type.ToString().Substring(1)})trackable;");
+                    }
+                }
+
+                if (trackableProperties.Length > 0 || snapshotProperty != null)
+                {
+                    using (w.B("public override ISpawnPayload GetSpawnPayload()"))
+                    {
+                        w._($"var payload = new {payloadTableClassName}.Spawn();",
+                            $"payload.Gather(this);",
+                            $"return payload;");
+                    }
+                }
+
+                if (trackableProperties.Length > 0)
+                {
+                    using (w.B("public override IUpdateChangePayload GetUpdateChangePayload()"))
+                    {
+                        w._($"var payload = new {payloadTableClassName}.UpdateChange();",
+                            $"payload.Gather(this);",
+                            $"return payload;");
+                    }
+                }
+
+                var classMethods = methods.Where(
+                    m => m.AttributeLists.GetAttribute("ToServerAttribute") == null).ToArray();
+
+                foreach (var method in classMethods)
+                {
+                    var messageName = method2PayloadTypeNameMap[method];
+                    var parameters = method.ParameterList.Parameters;
+
+                    var parameterTypeNames = string.Join(", ", parameters.Select(p => p.ToString()));
+                    var parameterInits = string.Join(", ", parameters.Select(p => p.Identifier + " = " + p.Identifier));
+
+                    using (w.B($"public void {method.Identifier}({parameterTypeNames})"))
+                    {
+                        w._($"var payload = new {payloadTableClassName}.{messageName} {{ {parameterInits} }};",
+                            $"SendInvoke(payload);");
+                    }
+                }
             }
-
-            if (snapshotProperty != null)
-            {
-                sb.AppendLine();
-                sb.Append("\tpublic override object Snapshot { get { return OnSnapshot(); } }\n");
-                sb.AppendLine();
-                sb.Append($"\tpublic abstract {snapshotProperty.Type} OnSnapshot();\n");
-            }
-
-            sb.AppendLine();
-            sb.Append($"\tpublic override int TrackableDataCount {{ get {{ return {trackableProperties.Length}; }} }}\n");
-            sb.AppendLine();
-            sb.Append("\tpublic override ITrackable GetTrackableData(int index)\n");
-            sb.Append("\t{\n");
-            for (int i = 0; i < trackableProperties.Length; i++)
-            {
-                sb.Append($"\t\tif (index == {i}) return {trackableProperties[i].Identifier};\n");
-            }
-            sb.Append("\t\treturn null;\n");
-            sb.Append("\t}\n");
-            sb.AppendLine();
-            sb.Append("\tpublic override void SetTrackableData(int index, ITrackable trackable)\n");
-            sb.Append("\t{\n");
-            for (int i = 0; i < trackableProperties.Length; i++)
-            {
-                sb.Append($"\t\tif (index == {i}) {trackableProperties[i].Identifier} = (Trackable{trackableProperties[i].Type.ToString().Substring(1)})trackable;\n");
-            }
-            sb.Append("\t}\n");
-
-            if (trackableProperties.Length > 0 || snapshotProperty != null)
-            {
-                sb.AppendLine();
-                sb.Append("\tpublic override ISpawnPayload GetSpawnPayload()\n");
-                sb.Append("\t{\n");
-                sb.Append($"\t\tvar payload = new {payloadTableClassName}.Spawn();\n");
-                sb.Append($"\t\tpayload.Gather(this);\n");
-                sb.Append($"\t\treturn payload;\n");
-                sb.Append("\t}\n");
-            }
-
-            if (trackableProperties.Length > 0)
-            {
-                sb.AppendLine();
-                sb.Append("\tpublic override IUpdateChangePayload GetUpdateChangePayload()\n");
-                sb.Append("\t{\n");
-                sb.Append($"\t\tvar payload = new {payloadTableClassName}.UpdateChange();\n");
-                sb.Append($"\t\tpayload.Gather(this);\n");
-                sb.Append($"\t\treturn payload;\n");
-                sb.Append("\t}\n");
-            }
-
-            var classMethods = methods.Where(
-                m => m.AttributeLists.GetAttribute("ToServerAttribute") == null).ToArray();
-
-            foreach (var method in classMethods)
-            {
-                var messageName = method2PayloadTypeNameMap[method];
-                var parameters = method.ParameterList.Parameters;
-
-                var parameterTypeNames = string.Join(", ", parameters.Select(p => p.ToString()));
-                var parameterInits = string.Join(", ", parameters.Select(p => p.Identifier + " = " + p.Identifier));
-
-                sb.AppendLine();
-
-                sb.AppendFormat("\tpublic void {0}({1})\n", method.Identifier, parameterTypeNames);
-
-                sb.Append("\t{\n");
-
-                sb.AppendFormat("\t\tvar payload = new {0}.{1} {{ {2} }};\n", payloadTableClassName, messageName, parameterInits);
-                sb.AppendFormat("\t\tSendInvoke(payload);\n");
-
-                sb.Append("\t}\n");
-            }
-
-            sb.Append("}");
-            writer.AddCode(sb.ToString());
         }
 
         private void GenerateClientEntityBaseCode(
-            InterfaceDeclarationSyntax idecl, ICodeGenWriter writer,
+            InterfaceDeclarationSyntax idecl, CodeWriter.CodeWriter w,
             MethodDeclarationSyntax[] methods, Dictionary<MethodDeclarationSyntax, string> method2PayloadTypeNameMap,
             PropertyDeclarationSyntax snapshotProperty, PropertyDeclarationSyntax[] trackableProperties)
         {
@@ -496,91 +460,77 @@ namespace CodeGen
             var interfaceMethods = methods.Where(
                     m => m.AttributeLists.GetAttribute("ToServerAttribute") == null).ToArray();
 
-            sb.Append($"public interface {interfaceName} : IEntityClientHandler\n");
-            sb.Append("{\n");
-            foreach (var method in interfaceMethods)
+            using (w.B($"public interface {interfaceName} : IEntityClientHandler"))
             {
-                sb.Append("\t" + method.ReturnType + " On" + method.Identifier + method.ParameterList + ";\n");
+                foreach (var method in interfaceMethods)
+                    w._($"{method.ReturnType} On{method.Identifier}{method.ParameterList};");
             }
-            sb.Append("}\n");
-            sb.AppendLine();
 
             // ClientEntityBase class
 
-            sb.Append($"public abstract class {baseClassName} : {Options.ClientEntity ?? "ClientEntity"}\n");
-            sb.Append("{");
-
-            if (trackableProperties.Length > 0)
+            using (w.B($"public abstract class {baseClassName} : {Options.ClientEntity ?? "ClientEntity"}"))
             {
-                sb.AppendLine();
-                foreach (var property in trackableProperties)
+                if (trackableProperties.Length > 0)
                 {
-                    sb.Append($"\tpublic Trackable{property.Type.ToString().Substring(1)} {property.Identifier} {{ get; set; }}\n");
-                }
-                sb.AppendLine();
+                    foreach (var property in trackableProperties)
+                        w._($"public Trackable{property.Type.ToString().Substring(1)} {property.Identifier} {{ get; set; }}");
 
-                sb.Append($"\tprotected {baseClassName}()\n");
-                sb.Append("\t{\n");
-                foreach (var property in trackableProperties)
+                    w._();
+
+                    using (w.B($"protected {baseClassName}()"))
+                    {
+                        foreach (var property in trackableProperties)
+                            w._($"{property.Identifier} = new Trackable{property.Type.ToString().Substring(1)}();");
+                    }
+                }
+
+                if (snapshotProperty != null)
                 {
-                    sb.Append($"\t\t{property.Identifier} = new Trackable{property.Type.ToString().Substring(1)}();\n");
+                    w._($"public override object Snapshot {{ set {{ OnSnapshot(({snapshotProperty.Type})value); }} }}");
+                    w._();
+                    w._($"public abstract void OnSnapshot({snapshotProperty.Type} snapshot);");
+                    w._();
                 }
-                sb.Append("\t}\n");
+
+                w._($"public override int TrackableDataCount {{ get {{ return {trackableProperties.Length}; }} }}");
+                w._();
+
+                using (w.B("public override ITrackable GetTrackableData(int index)"))
+                {
+                    for (int i = 0; i < trackableProperties.Length; i++)
+                    {
+                        w._($"if (index == {i}) return {trackableProperties[i].Identifier};");
+                    }
+                    w._("return null;");
+                }
+
+                using (w.B("public override void SetTrackableData(int index, ITrackable trackable)"))
+                {
+                    for (int i = 0; i < trackableProperties.Length; i++)
+                    {
+                        w._($"if (index == {i}) {trackableProperties[i].Identifier} = " +
+                            $"(Trackable{trackableProperties[i].Type.ToString().Substring(1)})trackable;");
+                    }
+                }
+
+                var classMethods = methods.Where(
+                    m => m.AttributeLists.GetAttribute("ToClientAttribute") == null).ToArray();
+
+                foreach (var method in classMethods)
+                {
+                    var messageName = method2PayloadTypeNameMap[method];
+                    var parameters = method.ParameterList.Parameters;
+
+                    var parameterTypeNames = string.Join(", ", parameters.Select(p => p.ToString()));
+                    var parameterInits = string.Join(", ", parameters.Select(p => p.Identifier + " = " + p.Identifier));
+
+                    using (w.B($"public void {method.Identifier}({parameterTypeNames})"))
+                    {
+                        w._($"var payload = new {payloadTableClassName}.{messageName} {{ {parameterInits} }};",
+                            $"SendInvoke(payload);");
+                    }
+                }
             }
-
-            if (snapshotProperty != null)
-            {
-                sb.AppendLine();
-                sb.Append($"\tpublic override object Snapshot {{ set {{ OnSnapshot(({snapshotProperty.Type})value); }} }}\n");
-                sb.AppendLine();
-                sb.Append($"\tpublic abstract void OnSnapshot({snapshotProperty.Type} snapshot);\n");
-            }
-
-            sb.AppendLine();
-            sb.Append($"\tpublic override int TrackableDataCount {{ get {{ return {trackableProperties.Length}; }} }}\n");
-            sb.AppendLine();
-            sb.Append("\tpublic override ITrackable GetTrackableData(int index)\n");
-            sb.Append("\t{\n");
-            for (int i = 0; i < trackableProperties.Length; i++)
-            {
-                sb.Append($"\t\tif (index == {i}) return {trackableProperties[i].Identifier};\n");
-            }
-            sb.Append("\t\treturn null;\n");
-            sb.Append("\t}\n");
-            sb.AppendLine();
-            sb.Append("\tpublic override void SetTrackableData(int index, ITrackable trackable)\n");
-            sb.Append("\t{\n");
-            for (int i = 0; i < trackableProperties.Length; i++)
-            {
-                sb.Append($"\t\tif (index == {i}) {trackableProperties[i].Identifier} = (Trackable{trackableProperties[i].Type.ToString().Substring(1)})trackable;\n");
-            }
-            sb.Append("\t}\n");
-
-            var classMethods = methods.Where(
-                m => m.AttributeLists.GetAttribute("ToClientAttribute") == null).ToArray();
-
-            foreach (var method in classMethods)
-            {
-                var messageName = method2PayloadTypeNameMap[method];
-                var parameters = method.ParameterList.Parameters;
-
-                var parameterTypeNames = string.Join(", ", parameters.Select(p => p.ToString()));
-                var parameterInits = string.Join(", ", parameters.Select(p => p.Identifier + " = " + p.Identifier));
-
-                sb.AppendLine();
-
-                sb.AppendFormat("\tpublic void {0}({1})\n", method.Identifier, parameterTypeNames);
-
-                sb.Append("\t{\n");
-
-                sb.AppendFormat("\t\tvar payload = new {0}.{1} {{ {2} }};\n", payloadTableClassName, messageName, parameterInits);
-                sb.AppendFormat("\t\tSendInvoke(payload);\n");
-
-                sb.Append("\t}\n");
-            }
-
-            sb.Append("}");
-            writer.AddCode(sb.ToString());
         }
 
         private MethodDeclarationSyntax[] GetMethods(InterfaceDeclarationSyntax idecl)
