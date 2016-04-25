@@ -28,6 +28,7 @@ namespace Domain.Entity
         [IgnoreDataMember]
         public IPocoTracker<ISpaceShipData> Tracker { get; set; }
 
+        [IgnoreDataMember]
         public bool Changed { get { return Tracker != null && Tracker.HasChange; } }
 
         ITracker ITrackable.Tracker
