@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "AkkaInterfacedSlimSocket": {
+      "version": ">=0.2.1",
+      "source": "github:SaladLab/Akka.Interfaced.SlimSocket"
+    },
+    "EntityNetwork": {
+      "version": ">=0.2.0",
+      "source": "github:SaladLab/EntityNetwork"
+    }
+  }
+}
