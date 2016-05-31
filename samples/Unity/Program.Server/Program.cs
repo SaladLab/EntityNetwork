@@ -38,11 +38,13 @@ namespace Unity.Program.Server
         {
             var logger = LogManager.GetLogger("ClientGateway");
 
+            var typeModel = TypeModel.Create();
+            AutoSurrogate.Register(typeModel);
             _tcpConnectionSettings = new TcpConnectionSettings
             {
                 PacketSerializer = new PacketSerializer(
                     new PacketSerializerBase.Data(
-                        new ProtoBufMessageSerializer(TypeModel.Create()),
+                        new ProtoBufMessageSerializer(typeModel),
                         new TypeAliasTable()))
             };
 

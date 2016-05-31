@@ -1,9 +1,7 @@
 ﻿using System.Collections;
 using System.Net;
 using Akka.Interfaced;
-using Akka.Interfaced.SlimSocket.Base;
 using Akka.Interfaced.SlimSocket.Client;
-using Common.Logging;
 using Domain;
 using EntityNetwork;
 using TypeAlias;
@@ -14,7 +12,7 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
     private ClientZone _zone;
     private ProtobufChannelToClientZoneInbound _zoneChannel;
     private GameClientRef _gameClient;
-    private ObserverEventDispatcher _gameObserver;
+    private GameObserver _gameObserver;
 
     private void Start()
     {
@@ -23,32 +21,17 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
         StartCoroutine(ProcessConnectToServer());
     }
 
-    private void Update()
-    {
-        if (_zone != null)
-        {
-            // make gameObserver work in main thread
-            _gameObserver.Pending = false;
-            _gameObserver.Pending = true;
-        }
-    }
-
     private IEnumerator ProcessConnectToServer()
     {
         WriteLine("Connect");
 
-        var serializer = new PacketSerializer(
-            new PacketSerializerBase.Data(
-                new ProtoBufMessageSerializer(new DomainProtobufSerializer()),
-                new TypeAliasTable()));
-
-        G.Comm = new Communicator(G.Logger, new IPEndPoint(IPAddress.Loopback, 5000),
-                                  _ => new TcpConnection(serializer, LogManager.GetLogger("Connection")));
+        G.Comm = CommunicatorHelper.CreateCommunicator<DomainProtobufSerializer>(
+            G.Logger, new IPEndPoint(IPAddress.Loopback, 5000));
         G.Comm.Start();
 
         // get user
 
-        var user = new UserRef(new SlimActorRef(1), new SlimRequestWaiter(G.Comm, this), null);
+        var user = G.Comm.CreateRef<UserRef>();
 
         var t1 = user.GetId();
         yield return t1.WaitHandle;
@@ -57,22 +40,22 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
         if (t1.Status != TaskStatus.RanToCompletion)
             yield break;
 
-        var observerId = G.Comm.IssueObserverId();
-        _gameObserver = new ObserverEventDispatcher(this, startPending: true);
-        G.Comm.AddObserver(observerId, _gameObserver);
+        _gameObserver = (GameObserver)G.Comm.CreateObserver<IGameObserver>(this, startPending: true);
 
         // enter game
 
-        var t2 = user.EnterGame("Test", observerId);
+        var t2 = user.EnterGame("Test", _gameObserver);
         yield return t2.WaitHandle;
         ShowResult(t2, "EnterGame()");
 
         if (t2.Status != TaskStatus.RanToCompletion)
+        {
+            _gameObserver.Dispose();
+            _gameObserver = null;
             yield break;
+        }
 
-        _gameClient = new GameClientRef(
-            new SlimActorRef(t2.Result.Item1),
-            new SlimRequestWaiter(G.Comm, this), null);
+        _gameClient = (GameClientRef)t2.Result.Item1;
 
         _zone = new ClientZone(
             ClientEntityFactory.Default,
@@ -89,6 +72,8 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
             TypeModel = new DomainProtobufSerializer(),
             InboundClientZone = _zone
         };
+
+        _gameObserver.GetEventDispatcher().Pending = false;
     }
 
     private void WriteLine(string text)

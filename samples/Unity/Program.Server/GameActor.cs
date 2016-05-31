@@ -9,14 +9,14 @@ using Common.Logging;
 using Domain;
 using Domain.Entity;
 using EntityNetwork;
-using Newtonsoft.Json;
 using ProtoBuf.Meta;
 using TypeAlias;
 
 namespace Unity.Program.Server
 {
     [Log]
-    public class GameActor : InterfacedActor<GameActor>, IGame, IGameClient
+    [ResponsiveException(typeof(InvalidOperationException))]
+    public class GameActor : InterfacedActor, IExtendedInterface<IGame, IGameClient>
     {
         private class UserData : IByteChannel
         {
@@ -67,7 +67,8 @@ namespace Unity.Program.Server
             return typeModel;
         });
 
-        async Task<Tuple<int, GameInfo>> IGame.Enter(string userId, IGameObserver observer)
+        [ExtendedHandler]
+        private Tuple<int, GameInfo> Enter(string userId, IGameObserver observer)
         {
             if (_userMap.ContainsKey(userId))
                 throw new InvalidOperationException();
@@ -116,7 +117,8 @@ namespace Unity.Program.Server
                 });
         }
 
-        async Task IGame.Leave(string userId)
+        [ExtendedHandler]
+        private void Leave(string userId)
         {
             UserData user;
             if (_userMap.TryGetValue(userId, out user) == false)
@@ -131,7 +133,8 @@ namespace Unity.Program.Server
             NotifyToAllObservers(o => o.Leave(userId));
         }
 
-        async Task IGameClient.ZoneChange(string senderUserId, byte[] bytes)
+        [ExtendedHandler]
+        private void ZoneChange(string senderUserId, byte[] bytes)
         {
             UserData user;
             if (_userMap.TryGetValue(senderUserId, out user) == false)

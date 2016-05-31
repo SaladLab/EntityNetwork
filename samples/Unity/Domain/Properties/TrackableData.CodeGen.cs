@@ -118,7 +118,8 @@ namespace Domain.Entity
         [ProtoMember(1)] public EnvelopedObject<float> Hp;
         [ProtoMember(2)] public EnvelopedObject<float> Score;
 
-        public static implicit operator TrackableSpaceShipDataTrackerSurrogate(TrackablePocoTracker<ISpaceShipData> tracker)
+        [ProtoConverter]
+        public static TrackableSpaceShipDataTrackerSurrogate Convert(TrackablePocoTracker<ISpaceShipData> tracker)
         {
             if (tracker == null)
                 return null;
@@ -140,7 +141,8 @@ namespace Domain.Entity
             return surrogate;
         }
 
-        public static implicit operator TrackablePocoTracker<ISpaceShipData>(TrackableSpaceShipDataTrackerSurrogate surrogate)
+        [ProtoConverter]
+        public static TrackablePocoTracker<ISpaceShipData> Convert(TrackableSpaceShipDataTrackerSurrogate surrogate)
         {
             if (surrogate == null)
                 return null;

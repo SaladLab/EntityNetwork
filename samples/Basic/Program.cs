@@ -67,7 +67,7 @@ namespace Basic
 
             serverZone.RunAction(zone =>
             {
-                zone.Spawn(typeof(ISpaceShip), 0, EntityFlags.Normal);
+                zone.Spawn(typeof(ISpaceShip), 0, EntityFlags.AnyoneCanControl);
             });
 
             var cship1A = (ClientSpaceShip)clientZones[0].GetEntity(1);

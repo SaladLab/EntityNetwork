@@ -14,11 +14,38 @@ using ProtoBuf;
 using TypeAlias;
 using System.ComponentModel;
 
+namespace Domain
+{
+    #region SurrogateForIActorRef
+
+    [ProtoContract]
+    public class SurrogateForIActorRef
+    {
+        [ProtoMember(1)] public int Id;
+
+        [ProtoConverter]
+        public static SurrogateForIActorRef Convert(IActorRef value)
+        {
+            if (value == null) return null;
+            var actor = ((BoundActorRef)value);
+            return new SurrogateForIActorRef { Id = actor.Id };
+        }
+
+        [ProtoConverter]
+        public static IActorRef Convert(SurrogateForIActorRef value)
+        {
+            if (value == null) return null;
+            return new BoundActorRef(value.Id);
+        }
+    }
+}
+
+#endregion
 #region Domain.IGameClient
 
 namespace Domain
 {
-    [PayloadTableForInterfacedActor(typeof(IGameClient))]
+    [PayloadTable(typeof(IGameClient), PayloadTableKind.Request)]
     public static class IGameClient_PayloadTable
     {
         public static Type[,] GetPayloadTypes()
@@ -30,15 +57,24 @@ namespace Domain
 
         [ProtoContract, TypeAlias]
         public class ZoneChange_Invoke
-            : IInterfacedPayload, ITagOverridable, IAsyncInvokable
+            : IInterfacedPayload, IAsyncInvokable, IPayloadTagOverridable
         {
             [ProtoMember(1)] public System.String senderUserId;
             [ProtoMember(2)] public System.Byte[] bytes;
-            public Type GetInterfaceType() { return typeof(IGameClient); }
-            public void SetTag(object value) { senderUserId = (System.String)value; }
-            public Task<IValueGetable> InvokeAsync(object target)
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IGameClient);
+            }
+
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
+            }
+
+            void IPayloadTagOverridable.SetTag(object value)
+            {
+                senderUserId = (System.String)value;
             }
         }
     }
@@ -50,6 +86,14 @@ namespace Domain
 
     public class GameClientRef : InterfacedActorRef, IGameClient, IGameClient_NoReply
     {
+        public GameClientRef() : base(null)
+        {
+        }
+
+        public GameClientRef(IActorRef actor) : base(actor)
+        {
+        }
+
         public GameClientRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
         {
         }
@@ -85,6 +129,26 @@ namespace Domain
             SendRequest(requestMessage);
         }
     }
+
+    [ProtoContract]
+    public class SurrogateForIGameClient
+    {
+        [ProtoMember(1)] public IActorRef Actor;
+
+        [ProtoConverter]
+        public static SurrogateForIGameClient Convert(IGameClient value)
+        {
+            if (value == null) return null;
+            return new SurrogateForIGameClient { Actor = ((GameClientRef)value).Actor };
+        }
+
+        [ProtoConverter]
+        public static IGameClient Convert(SurrogateForIGameClient value)
+        {
+            if (value == null) return null;
+            return new GameClientRef(value.Actor);
+        }
+    }
 }
 
 #endregion
@@ -92,7 +156,7 @@ namespace Domain
 
 namespace Domain
 {
-    [PayloadTableForInterfacedActor(typeof(IUser))]
+    [PayloadTable(typeof(IUser), PayloadTableKind.Request)]
     public static class IUser_PayloadTable
     {
         public static Type[,] GetPayloadTypes()
@@ -106,32 +170,65 @@ namespace Domain
 
         [ProtoContract, TypeAlias]
         public class EnterGame_Invoke
-            : IInterfacedPayload, IAsyncInvokable
+            : IInterfacedPayload, IAsyncInvokable, IPayloadObserverUpdatable
         {
             [ProtoMember(1)] public System.String name;
-            [ProtoMember(2)] public System.Int32 observerId;
-            public Type GetInterfaceType() { return typeof(IUser); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            [ProtoMember(2)] public Domain.IGameObserver observer;
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IUser);
+            }
+
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
+            }
+
+            void IPayloadObserverUpdatable.Update(Action<IInterfacedObserver> updater)
+            {
+                if (observer != null)
+                {
+                    updater(observer);
+                }
             }
         }
 
         [ProtoContract, TypeAlias]
         public class EnterGame_Return
-            : IInterfacedPayload, IValueGetable
+            : IInterfacedPayload, IValueGetable, IPayloadActorRefUpdatable
         {
-            [ProtoMember(1)] public System.Tuple<System.Int32, System.Int32, Domain.GameInfo> v;
-            public Type GetInterfaceType() { return typeof(IUser); }
-            public object Value { get { return v; } }
+            [ProtoMember(1)] public System.Tuple<Domain.IGameClient, System.Int32, Domain.GameInfo> v;
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IUser);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
+
+            void IPayloadActorRefUpdatable.Update(Action<object> updater)
+            {
+                if (v != null)
+                {
+                    if (v.Item1 != null) updater(v.Item1);
+                }
+            }
         }
 
         [ProtoContract, TypeAlias]
         public class GetId_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            public Type GetInterfaceType() { return typeof(IUser); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Type GetInterfaceType()
+            {
+                return typeof(IUser);
+            }
+
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
@@ -142,16 +239,28 @@ namespace Domain
             : IInterfacedPayload, IValueGetable
         {
             [ProtoMember(1)] public System.String v;
-            public Type GetInterfaceType() { return typeof(IUser); }
-            public object Value { get { return v; } }
+
+            public Type GetInterfaceType()
+            {
+                return typeof(IUser);
+            }
+
+            public object Value
+            {
+                get { return v; }
+            }
         }
 
         [ProtoContract, TypeAlias]
         public class LeaveGame_Invoke
             : IInterfacedPayload, IAsyncInvokable
         {
-            public Type GetInterfaceType() { return typeof(IUser); }
-            public Task<IValueGetable> InvokeAsync(object target)
+            public Type GetInterfaceType()
+            {
+                return typeof(IUser);
+            }
+
+            public Task<IValueGetable> InvokeAsync(object __target)
             {
                 return null;
             }
@@ -160,13 +269,21 @@ namespace Domain
 
     public interface IUser_NoReply
     {
-        void EnterGame(System.String name, System.Int32 observerId);
+        void EnterGame(System.String name, Domain.IGameObserver observer);
         void GetId();
         void LeaveGame();
     }
 
     public class UserRef : InterfacedActorRef, IUser, IUser_NoReply
     {
+        public UserRef() : base(null)
+        {
+        }
+
+        public UserRef(IActorRef actor) : base(actor)
+        {
+        }
+
         public UserRef(IActorRef actor, IRequestWaiter requestWaiter, TimeSpan? timeout) : base(actor, requestWaiter, timeout)
         {
         }
@@ -186,12 +303,12 @@ namespace Domain
             return new UserRef(Actor, RequestWaiter, timeout);
         }
 
-        public Task<System.Tuple<System.Int32, System.Int32, Domain.GameInfo>> EnterGame(System.String name, System.Int32 observerId)
+        public Task<System.Tuple<Domain.IGameClient, System.Int32, Domain.GameInfo>> EnterGame(System.String name, Domain.IGameObserver observer)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observerId = observerId }
+                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observer = observer }
             };
-            return SendRequestAndReceive<System.Tuple<System.Int32, System.Int32, Domain.GameInfo>>(requestMessage);
+            return SendRequestAndReceive<System.Tuple<Domain.IGameClient, System.Int32, Domain.GameInfo>>(requestMessage);
         }
 
         public Task<System.String> GetId()
@@ -210,10 +327,10 @@ namespace Domain
             return SendRequestAndWait(requestMessage);
         }
 
-        void IUser_NoReply.EnterGame(System.String name, System.Int32 observerId)
+        void IUser_NoReply.EnterGame(System.String name, Domain.IGameObserver observer)
         {
             var requestMessage = new RequestMessage {
-                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observerId = observerId }
+                InvokePayload = new IUser_PayloadTable.EnterGame_Invoke { name = name, observer = observer }
             };
             SendRequest(requestMessage);
         }
@@ -234,6 +351,49 @@ namespace Domain
             SendRequest(requestMessage);
         }
     }
+
+    [ProtoContract]
+    public class SurrogateForIUser
+    {
+        [ProtoMember(1)] public IActorRef Actor;
+
+        [ProtoConverter]
+        public static SurrogateForIUser Convert(IUser value)
+        {
+            if (value == null) return null;
+            return new SurrogateForIUser { Actor = ((UserRef)value).Actor };
+        }
+
+        [ProtoConverter]
+        public static IUser Convert(SurrogateForIUser value)
+        {
+            if (value == null) return null;
+            return new UserRef(value.Actor);
+        }
+    }
+}
+
+#endregion
+namespace Domain
+{
+    #region SurrogateForINotificationChannel
+
+    [ProtoContract]
+    public class SurrogateForINotificationChannel
+    {
+        [ProtoConverter]
+        public static SurrogateForINotificationChannel Convert(INotificationChannel value)
+        {
+            if (value == null) return null;
+            return new SurrogateForINotificationChannel();
+        }
+
+        [ProtoConverter]
+        public static INotificationChannel Convert(SurrogateForINotificationChannel value)
+        {
+            return null;
+        }
+    }
 }
 
 #endregion
@@ -241,36 +401,117 @@ namespace Domain
 
 namespace Domain
 {
+    [PayloadTable(typeof(IGameObserver), PayloadTableKind.Notification)]
     public static class IGameObserver_PayloadTable
     {
+        public static Type[] GetPayloadTypes()
+        {
+            return new Type[] {
+                typeof(Enter_Invoke),
+                typeof(Leave_Invoke),
+                typeof(ZoneChange_Invoke),
+            };
+        }
+
         [ProtoContract, TypeAlias]
-        public class Enter_Invoke : IInvokable
+        public class Enter_Invoke : IInterfacedPayload, IInvokable
         {
             [ProtoMember(1)] public System.String userId;
-            public void Invoke(object target)
+
+            public Type GetInterfaceType()
             {
-                ((IGameObserver)target).Enter(userId);
+                return typeof(IGameObserver);
+            }
+
+            public void Invoke(object __target)
+            {
+                ((IGameObserver)__target).Enter(userId);
             }
         }
 
         [ProtoContract, TypeAlias]
-        public class Leave_Invoke : IInvokable
+        public class Leave_Invoke : IInterfacedPayload, IInvokable
         {
             [ProtoMember(1)] public System.String userId;
-            public void Invoke(object target)
+
+            public Type GetInterfaceType()
             {
-                ((IGameObserver)target).Leave(userId);
+                return typeof(IGameObserver);
+            }
+
+            public void Invoke(object __target)
+            {
+                ((IGameObserver)__target).Leave(userId);
             }
         }
 
         [ProtoContract, TypeAlias]
-        public class ZoneChange_Invoke : IInvokable
+        public class ZoneChange_Invoke : IInterfacedPayload, IInvokable
         {
             [ProtoMember(1)] public System.Byte[] bytes;
-            public void Invoke(object target)
+
+            public Type GetInterfaceType()
             {
-                ((IGameObserver)target).ZoneChange(bytes);
+                return typeof(IGameObserver);
             }
+
+            public void Invoke(object __target)
+            {
+                ((IGameObserver)__target).ZoneChange(bytes);
+            }
+        }
+    }
+
+    public class GameObserver : InterfacedObserver, IGameObserver
+    {
+        public GameObserver()
+            : base(null, 0)
+        {
+        }
+
+        public GameObserver(INotificationChannel channel, int observerId = 0)
+            : base(channel, observerId)
+        {
+        }
+
+        public void Enter(System.String userId)
+        {
+            var payload = new IGameObserver_PayloadTable.Enter_Invoke { userId = userId };
+            Notify(payload);
+        }
+
+        public void Leave(System.String userId)
+        {
+            var payload = new IGameObserver_PayloadTable.Leave_Invoke { userId = userId };
+            Notify(payload);
+        }
+
+        public void ZoneChange(System.Byte[] bytes)
+        {
+            var payload = new IGameObserver_PayloadTable.ZoneChange_Invoke { bytes = bytes };
+            Notify(payload);
+        }
+    }
+
+    [ProtoContract]
+    public class SurrogateForIGameObserver
+    {
+        [ProtoMember(1)] public INotificationChannel Channel;
+        [ProtoMember(2)] public int ObserverId;
+
+        [ProtoConverter]
+        public static SurrogateForIGameObserver Convert(IGameObserver value)
+        {
+            if (value == null) return null;
+            var o = (GameObserver)value;
+            return new SurrogateForIGameObserver { Channel = o.Channel, ObserverId = o.ObserverId };
+        }
+
+        [ProtoConverter]
+        public static IGameObserver Convert(SurrogateForIGameObserver value)
+        {
+            if (value == null) return null;
+            return new GameObserver(value.Channel, value.ObserverId);
         }
     }
 }

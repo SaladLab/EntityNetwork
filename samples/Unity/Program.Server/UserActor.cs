@@ -5,14 +5,13 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
-using Akka.Interfaced.SlimSocket.Server;
 using Common.Logging;
 using Domain;
 
 namespace Unity.Program.Server
 {
     [Log]
-    public class UserActor : InterfacedActor<UserActor>, IUser
+    public class UserActor : InterfacedActor, IUser
     {
         private ILog _logger;
         private IActorRef _clientSession;
@@ -47,7 +46,7 @@ namespace Unity.Program.Server
             return Task.FromResult(_id);
         }
 
-        async Task<Tuple<int, int, GameInfo>> IUser.EnterGame(string name, int observerId)
+        async Task<Tuple<IGameClient, int, GameInfo>> IUser.EnterGame(string name, IGameObserver observer)
         {
             if (_enteredGame != null)
                 throw new InvalidOperationException();
@@ -67,16 +66,21 @@ namespace Unity.Program.Server
 
             // enter the game
 
-            var observer = new GameObserver(_clientSession, observerId);
-            var ret = await game.Enter(_id, observer);
+            var join = await game.Enter(_id, observer);
 
             // Bind an occupant actor with client session
 
-            var reply2 = await _clientSession.Ask<ActorBoundSessionMessage.BindReply>(
+            var bind = await _clientSession.Ask<ActorBoundSessionMessage.BindReply>(
                 new ActorBoundSessionMessage.Bind(game.Actor, typeof(IGameClient), _id));
+            if (bind.ActorId == 0)
+            {
+                await game.Leave(_id);
+                _logger.Error($"Failed in binding GameClient");
+                throw new InvalidOperationException();
+            }
 
             _enteredGame = game;
-            return Tuple.Create(reply2.ActorId, ret.Item1, ret.Item2);
+            return Tuple.Create((IGameClient)BoundActorRef.Create<GameClientRef>(bind.ActorId), join.Item1, join.Item2);
         }
 
         async Task IUser.LeaveGame()
