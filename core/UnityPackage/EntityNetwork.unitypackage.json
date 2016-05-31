@@ -1,6 +1,6 @@
 {
   "id": "EntityNetwork",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "authors": [ "Esun Kim" ],
   "owners": [ "Esun Kim" ],
   "description": "EntityNetwork",
@@ -10,8 +10,8 @@
       "source": "github:SaladLab/NetLegacySupport"
     },
     "protobuf-net": {
-      "version": "2.0.0.668",
-      "source": "nuget:net20"
+      "version": "2.1.0-alpha-1",
+      "source": "nuget:net30"
     },
     "TrackableData": {
       "version": "1.*",
