@@ -11,6 +11,7 @@ let solution =
         "./EntityNetwork.sln" "Release" 
         [ { emptyProject with Name = "EntityNetwork"
                               Folder = "./core/EntityNetwork"
+                              PackagePrerelease = "beta"
                               Dependencies = 
                                   [ ("protobuf-net", "")
                                     ("TrackableData", "")
@@ -19,10 +20,12 @@ let solution =
           { emptyProject with Name = "EntityNetwork.Templates"
                               Folder = "./core/CodeGenerator-Templates"
                               Template = true
+                              PackagePrerelease = "beta"
                               Dependencies = [ ("EntityNetwork", "") ] }
           { emptyProject with Name = "EntityNetwork.Unity3D"
                               Folder = "./plugins/EntityNetwork.Unity3D"
                               DefaultTarget = "net35"
+                              PackagePrerelease = "beta"
                               Dependencies = [ ("EntityNetwork", "") ] } ]
 
 Target "Clean" <| fun _ -> cleanBin
