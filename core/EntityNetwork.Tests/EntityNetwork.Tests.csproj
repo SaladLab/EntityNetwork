@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.props" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.props')" />
   <Import Project="..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" />
-  <Import Project="..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props" Condition="Exists('$(SolutionDir)core\CodeGenerator-Templates\EntityNetwork.Templates.props')" />
   <PropertyGroup>
@@ -51,7 +51,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+      <HintPath>..\..\packages\protobuf-net.2.1.0-alpha-1\lib\net45\protobuf-net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -68,7 +68,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="TrackableData.Protobuf, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\TrackableData.Protobuf.1.1.3\lib\net45\TrackableData.Protobuf.dll</HintPath>
+      <HintPath>..\..\packages\TrackableData.Protobuf.1.1.5-beta\lib\net45\TrackableData.Protobuf.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="TypeAlias, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -130,11 +130,11 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.props'))" />
-    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets'))" />
     <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props'))" />
+    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.props'))" />
+    <Error Condition="!Exists('..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.targets'))" />
   </Target>
-  <Import Project="..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.3\build\TrackableData.Templates.targets')" />
+  <Import Project="..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.targets" Condition="Exists('..\..\packages\TrackableData.Templates.1.1.5\build\TrackableData.Templates.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
