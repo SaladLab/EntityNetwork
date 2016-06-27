@@ -1,4 +1,4 @@
-﻿using Domain.Entity;
+﻿using Domain;
 using EntityNetwork;
 using UnityEngine;
 

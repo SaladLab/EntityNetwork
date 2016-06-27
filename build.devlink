@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<packages>
+    <package id="EntityNetwork">
+        <files dir="lib/net45" source="core/EntityNetwork/bin/Debug"/>
+        <files dir="lib/net35" source="core/EntityNetwork.Net35/bin/Debug"/>
+    </package>
+    <package id="EntityNetwork.Templates">
+        <files dir="tools" source="core/CodeGenerator/bin/Debug"/>
+    </package>
+    <package id="EntityNetwork.Unity3D">
+        <files dir="lib/net35" source="plugins/EntityNetwork.Unity3D/bin/Debug"/>
+    </package>
+</packages>

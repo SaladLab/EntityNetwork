@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Net;
 using Akka.Interfaced;
+using Akka.Interfaced.SlimSocket;
 using Akka.Interfaced.SlimSocket.Client;
+using Common.Logging;
 using Domain;
 using EntityNetwork;
 using TypeAlias;
@@ -25,13 +27,27 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
     {
         WriteLine("Connect");
 
-        G.Comm = CommunicatorHelper.CreateCommunicator<DomainProtobufSerializer>(
-            G.Logger, new IPEndPoint(IPAddress.Loopback, 5000));
-        G.Comm.Start();
+        // Create channel and connect to gateway
+
+        var channelFactory = ChannelFactoryBuilder.Build<DomainProtobufSerializer>(
+            endPoint: new IPEndPoint(IPAddress.Loopback, 5000),
+            createChannelLogger: () => LogManager.GetLogger("Channel"));
+        channelFactory.Type = ChannelType.Tcp;
+        var channel = channelFactory.Create();
+
+        var t0 = channel.ConnectAsync();
+        yield return t0.WaitHandle;
+        if (t0.Exception != null)
+        {
+            WriteLine("Connection Failed: " + t0.Exception.Message);
+            yield break;
+        }
+
+        G.Channel = channel;
 
         // get user
 
-        var user = G.Comm.CreateRef<UserRef>();
+        var user = G.Channel.CreateRef<UserRef>();
 
         var t1 = user.GetId();
         yield return t1.WaitHandle;
@@ -40,7 +56,7 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
         if (t1.Status != TaskStatus.RanToCompletion)
             yield break;
 
-        _gameObserver = (GameObserver)G.Comm.CreateObserver<IGameObserver>(this, startPending: true);
+        _gameObserver = (GameObserver)G.Channel.CreateObserver<IGameObserver>(this, startPending: true);
 
         // enter game
 
@@ -50,7 +66,7 @@ public class MainScene : MonoBehaviour, IGameObserver, IByteChannel
 
         if (t2.Status != TaskStatus.RanToCompletion)
         {
-            _gameObserver.Dispose();
+            G.Channel.RemoveObserver(_gameObserver);
             _gameObserver = null;
             yield break;
         }
