@@ -1,7 +1,7 @@
 ﻿using System;
 using EntityNetwork;
 
-namespace Domain.Entity
+namespace Domain
 {
     public class ServerSpaceShip : SpaceShipServerBase, ISpaceShipServerHandler
     {

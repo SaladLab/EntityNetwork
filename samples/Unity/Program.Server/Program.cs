@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Interfaced;
-using Akka.Interfaced.SlimSocket.Base;
+using Akka.Interfaced.SlimServer;
+using Akka.Interfaced.SlimSocket;
 using Akka.Interfaced.SlimSocket.Server;
 using Common.Logging;
 using Domain;
-using ProtoBuf.Meta;
-using TypeAlias;
 
 namespace Unity.Program.Server
 {
@@ -26,53 +22,50 @@ namespace Unity.Program.Server
             var system = ActorSystem.Create("MySystem");
             DeadRequestProcessingActor.Install(system);
 
-            StartListen(system, 5000);
+            var gateway = StartListen(system, ChannelType.Tcp, new IPEndPoint(IPAddress.Any, 5000)).Result;
 
             Console.WriteLine("Please enter key to quit.");
             Console.ReadLine();
+
+            gateway.Stop().Wait();
+            system.Terminate().Wait();
         }
 
-        private static TcpConnectionSettings _tcpConnectionSettings;
-
-        private static void StartListen(ActorSystem system, int port)
+        private static async Task<GatewayRef> StartListen(ActorSystem system, ChannelType channelType, IPEndPoint listenEndPoint)
         {
-            var logger = LogManager.GetLogger("ClientGateway");
+            var serializer = PacketSerializer.CreatePacketSerializer();
 
-            var typeModel = TypeModel.Create();
-            AutoSurrogate.Register(typeModel);
-            _tcpConnectionSettings = new TcpConnectionSettings
+            var initiator = new GatewayInitiator
             {
-                PacketSerializer = new PacketSerializer(
-                    new PacketSerializerBase.Data(
-                        new ProtoBufMessageSerializer(typeModel),
-                        new TypeAliasTable()))
+                ListenEndPoint = listenEndPoint,
+                GatewayLogger = LogManager.GetLogger($"Gateway({channelType})"),
+                CreateChannelLogger = (ep, _) => LogManager.GetLogger($"Channel({ep}"),
+                ConnectionSettings = new TcpConnectionSettings { PacketSerializer = serializer },
+                PacketSerializer = serializer,
+                CreateInitialActors = (context, connection) => new[]
+                {
+                    Tuple.Create(
+                        context.ActorOf(Props.Create(() =>
+                            new UserActor(context.Self.Cast<ActorBoundChannelRef>(), CreateUserId()))),
+                        new TaggedType[] { typeof(IUser) },
+                        ActorBindingFlags.StopThenCloseChannel)
+                }
             };
 
-            var clientGateway = system.ActorOf(Props.Create(() => new ClientGateway(logger, CreateSession)));
-            clientGateway.Tell(new ClientGatewayMessage.Start(new IPEndPoint(IPAddress.Any, port)));
-        }
+            var gateway = (channelType == ChannelType.Tcp)
+                ? system.ActorOf(Props.Create(() => new TcpGateway(initiator)), "TcpGateway").Cast<GatewayRef>()
+                : system.ActorOf(Props.Create(() => new UdpGateway(initiator)), "UdpGateway").Cast<GatewayRef>();
 
-        private static IActorRef CreateSession(IActorContext context, Socket socket)
-        {
-            var logger = LogManager.GetLogger($"Client({socket.RemoteEndPoint})");
-            return context.ActorOf(Props.Create(() => new ClientSession(
-                                                          logger, socket, _tcpConnectionSettings, CreateInitialActor)));
+            await gateway.Start();
+            return gateway;
         }
 
         private static int _lastUserId = 0;
+
         private static string CreateUserId()
         {
             var id = ++_lastUserId;
             return "User:" + id;
-        }
-
-        private static Tuple<IActorRef, Type>[] CreateInitialActor(IActorContext context, Socket socket)
-        {
-            return new[]
-            {
-                Tuple.Create(context.System.ActorOf(Props.Create(() => new UserActor(context.Self, CreateUserId()))),
-                             typeof(IUser)),
-            };
         }
     }
 }

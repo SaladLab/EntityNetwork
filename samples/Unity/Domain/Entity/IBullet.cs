@@ -5,7 +5,7 @@ using System.Text;
 using EntityNetwork;
 using TypeAlias;
 
-namespace Domain.Entity
+namespace Domain
 {
     [TypeAlias]
     public interface IBullet : IEntityPrototype

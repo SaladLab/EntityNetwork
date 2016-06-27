@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
+using Akka.Interfaced.SlimServer;
 using Common.Logging;
 using Domain;
 
@@ -14,22 +13,21 @@ namespace Unity.Program.Server
     public class UserActor : InterfacedActor, IUser
     {
         private ILog _logger;
-        private IActorRef _clientSession;
+        private readonly ActorBoundChannelRef _channel;
         private string _id;
         private GameRef _enteredGame;
 
-        public UserActor(IActorRef clientSession, string id)
+        public UserActor(ActorBoundChannelRef channel, string id)
         {
             _logger = LogManager.GetLogger($"UserActor({id})");
-            _clientSession = clientSession;
+            _channel = channel;
             _id = id;
         }
 
-        [MessageHandler]
-        private void OnMessage(ActorBoundSessionMessage.SessionTerminated message)
+        protected override void PostStop()
         {
             UnlinkAll();
-            Context.Stop(Self);
+            base.PostStop();
         }
 
         private void UnlinkAll()
@@ -62,17 +60,17 @@ namespace Unity.Program.Server
             {
                 actor = Context.System.ActorOf(Props.Create(() => new GameActor(name)), "game_" + name);
             }
-            var game = new GameRef(actor, this, null);
+            var game = actor.Cast<GameRef>().WithRequestWaiter(this);
 
             // enter the game
 
             var join = await game.Enter(_id, observer);
 
-            // Bind an occupant actor with client session
+            // Bind an game actor to channel
 
-            var bind = await _clientSession.Ask<ActorBoundSessionMessage.BindReply>(
-                new ActorBoundSessionMessage.Bind(game.Actor, typeof(IGameClient), _id));
-            if (bind.ActorId == 0)
+            var boundActor = await _channel.BindActor(game.CastToIActorRef(),
+                                                      new[] { new TaggedType(typeof(IGameClient), _id) });
+            if (boundActor == null)
             {
                 await game.Leave(_id);
                 _logger.Error($"Failed in binding GameClient");
@@ -80,7 +78,7 @@ namespace Unity.Program.Server
             }
 
             _enteredGame = game;
-            return Tuple.Create((IGameClient)BoundActorRef.Create<GameClientRef>(bind.ActorId), join.Item1, join.Item2);
+            return Tuple.Create((IGameClient)boundActor.Cast<GameClientRef>(), join.Item1, join.Item2);
         }
 
         async Task IUser.LeaveGame()
@@ -92,10 +90,9 @@ namespace Unity.Program.Server
 
             await _enteredGame.Leave(_id);
 
-            // Unbind an occupant actor with client session
+            // Unbind an game actor from channel
 
-            _clientSession.Tell(new ActorBoundSessionMessage.Unbind(_enteredGame.Actor));
-
+            _channel.WithNoReply().UnbindActor(_enteredGame.CastToIActorRef());
             _enteredGame = null;
         }
     }

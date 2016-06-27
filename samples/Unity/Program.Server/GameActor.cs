@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Interfaced;
 using Akka.Interfaced.LogFilter;
 using Common.Logging;
 using Domain;
-using Domain.Entity;
 using EntityNetwork;
 using ProtoBuf.Meta;
 using TypeAlias;
@@ -79,7 +76,7 @@ namespace Unity.Program.Server
 
             var userData = new UserData
             {
-                UserActor = new UserRef(Sender, this, null),
+                UserActor = Sender.Cast<UserRef>().WithRequestWaiter(this),
                 Observer = (GameObserver)observer,
                 ClientId = clientId,
             };

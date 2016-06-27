@@ -21,7 +21,7 @@ using System.ComponentModel;
 
 #region IBullet
 
-namespace Domain.Entity
+namespace Domain
 {
     [PayloadTableForEntity(typeof(IBullet))]
     public static class IBullet_PayloadTable
@@ -107,7 +107,7 @@ namespace Domain.Entity
 #endregion
 #region ISpaceShip
 
-namespace Domain.Entity
+namespace Domain
 {
     [PayloadTableForEntity(typeof(ISpaceShip))]
     public static class ISpaceShip_PayloadTable

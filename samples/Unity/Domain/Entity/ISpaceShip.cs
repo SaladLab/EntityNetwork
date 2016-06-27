@@ -3,7 +3,7 @@ using ProtoBuf;
 using TrackableData;
 using TypeAlias;
 
-namespace Domain.Entity
+namespace Domain
 {
     [TypeAlias]
     public interface ISpaceShip : IEntityPrototype

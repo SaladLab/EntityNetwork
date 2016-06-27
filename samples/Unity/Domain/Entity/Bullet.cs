@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Domain.Entity
+namespace Domain
 {
     public class ServerBullet : BulletServerBase, IBulletServerHandler
     {

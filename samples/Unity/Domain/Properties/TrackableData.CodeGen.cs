@@ -20,7 +20,7 @@ using TypeAlias;
 
 #region ISpaceShipData
 
-namespace Domain.Entity
+namespace Domain
 {
     [ProtoContract]
     public partial class TrackableSpaceShipData : ISpaceShipData
